@@ -99,9 +99,7 @@ window.onload = function init() {
         mousePosition = pixel_to_clip(event.clientX,event.clientY);
     });
     
-    document.onkeydown = handleKeyDown;
-    
-    function handleKeyDown(event) {
+    document.onkeydown = function (event) {
     if (event.keyCode === 87) {
       // W
       //Jump?
@@ -116,13 +114,13 @@ window.onload = function init() {
     }
     if (event.keyCode === 68) {
       // D
-      stickmanY += 0.05;
+      stickmanX += 0.05;
     }
     console.log("x: " + stickmanX + "  y: " + stickmanY  );
-  }
+  };
 
     render();
-}
+};
 
 function pixel_to_clip(x,y)
 {
@@ -204,7 +202,7 @@ function assignBlockType(i,j)
     {
        return "Air";
     }
-    else if (j == groundLevel && i <= waterLevel)
+    else if (j === groundLevel && i <= waterLevel)
     {
         return "Grass";
     }
