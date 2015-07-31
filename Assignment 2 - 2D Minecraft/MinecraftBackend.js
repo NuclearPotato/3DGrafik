@@ -11,13 +11,14 @@ var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
 var program;
 var firstCorner, secondCorner;
-var mousePosition;
+var mousePosition = [];
 
 var colors = [
-    vec4( 0.8, 0.8, 1.0, 1.0 ), // Air
-    vec4( 0.8, 0.6, 0.0, 1.0 ), // Dirt
-    vec4( 0.0, 1.0, 0.0, 1.0 ), // Grass
-    vec4( 0.0, 0.0, 1.0, 1.0 ) // Water
+    vec4(0.8, 0.8, 1.0, 1.0), // Air
+    vec4(0.8, 0.6, 0.0, 1.0), // Dirt
+    vec4(0.0, 1.0, 0.0, 1.0), // Grass
+    vec4(0.0, 0.0, 1.0, 1.0), // Water
+    vec4(0.0, 0.0, 0.0, 0.0) // Border color
 ];
 
 
@@ -62,7 +63,7 @@ window.onload = function init() {
 
     lBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, lBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 4, gl.STATIC_DRAW );
+    gl.bufferData(gl.ARRAY_BUFFER, 16*5, gl.STATIC_DRAW );
 
 
     var m = document.getElementById("mymenu");
@@ -112,10 +113,21 @@ function render()
 
 		gl.uniform2f(firstCorner,block.v2[0],block.v2[1]);
 		gl.uniform2f(secondCorner,block.v3[0],block.v3[1]);
-		
+
+        //console.log(i);
+
+
         gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
+
+        if (mousePosition[0] >= block.v1[0] && mousePosition[1] >= block.v1[1]
+            && mousePosition[0] <= block.v4[0] && mousePosition[1] <= block.v4[1])
+        {
+            //gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            gl.drawArrays(gl.LINE_LOOP, i+12, 4);
+            console.log(i);
+        }
     }
-    //window.requestAnimFrame(render);
+    window.requestAnimFrame(render);
 }
 
 
