@@ -1,0 +1,76 @@
+    <html>
+	<meta charset="utf-8">
+    <link href="MinecraftFrontend.css" rel="stylesheet">
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 vPosition;
+attribute vec4 vColor;
+
+varying vec2 midPos;
+varying vec4 fPosition;
+varying vec4 fColor;
+
+void main()
+{
+    gl_Position = vPosition;
+    fPosition = vPosition;
+    fColor = vColor;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+uniform vec2 corner1;
+uniform vec2 corner2;
+varying vec4 fPosition;
+varying vec4 fColor;
+void main()
+{
+
+    gl_FragColor = fColor;
+	
+	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
+	vec2 midPos = mix(corner1, corner2, 0.5);
+	float dist = (10.0 * distance( abs(midPos), abs(fragxy) ));
+	
+	gl_FragColor.r = fColor[0] - dist;
+	gl_FragColor.g = fColor[1] - dist;
+	gl_FragColor.b = fColor[2] - dist;
+}
+</script>
+
+<script type="text/javascript" src="Common/webgl-utils.js"></script>
+<script type="text/javascript" src="Common/initShaders.js"></script>
+<script type="text/javascript" src="Common/MV.js"></script>
+<script type="text/javascript" src="Common/debug/webgl-debug.js"></script>
+<script type="text/javascript" src="MinecraftBackend.js"></script>
+
+<body>
+	<div id="canvasPanel">
+		<canvas id="gl-canvas"  height="640" width="800">
+		Oops ... your browser doesn't support the HTML5 canvas element
+		</canvas>
+	</div>
+	<div id="inputPanel">
+		<select id = "mymenu" size = "4">
+			<option value = "0">Air</option>
+			<option value = "1">Dirt</option>
+			<option value = "2">Grass</option>
+			<option value = "3">Water</option>
+		</select>
+		<table id="buttonPanel">
+			<tr>
+				<td></td>
+				<td><input id="upButt" type="submit" value="Up"></td>
+				<td></td>
+			</tr>
+			<tr>
+				<td><input id="leftButt" type="submit" value="Left"></td>
+				<td><input id="downButt" type="submit" value="Down"></td>
+				<td><input id="rightButt" type="submit" value="Right"></td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>
