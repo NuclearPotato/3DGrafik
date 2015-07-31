@@ -94,6 +94,7 @@ window.onload = function init() {
         //Converting from window coordinates to clip coordinates
         var x = -1 + (2*event.clientX)/800;
         var y = -1 + (2*(640 - event.clientY))/640;
+        mousePosition = vec2(x,y);
         //console.log("x: " + x + "  y: " + y  );
     });
 
