@@ -12,8 +12,8 @@ var waterLevel = worldWidth/1.4;
 var program;
 var firstCorner, secondCorner, clickPos, waveLength;
 var mousePosition = [];
-var stickmanX;
-var stickmanY;
+var stickmanX = 0;
+var stickmanY = 0;
 
 var colors = [
     vec4(0.8, 0.8, 1.0, 1.0), // Air
