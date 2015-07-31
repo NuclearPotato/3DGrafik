@@ -8,16 +8,31 @@ attribute vec4 vColor;
 
 uniform vec2 clickPos;
 uniform float waveLength;
+varying float waveDist;
 
-varying vec2 midPos;
 varying vec4 fPosition;
 varying vec4 fColor;
 
 void main()
 {
-    gl_Position = vPosition;
-    fPosition = vPosition;
     fColor = vColor;
+	
+	vec2 vPos = vec2(vPosition[0],vPosition[1]);
+	
+	waveDist = distance(vPos, clickPos);
+	
+	if(waveLength > waveDist && waveLength < 0.5)
+	{
+		vec2 newPos = mix(clickPos, vPos, 0.95);
+		gl_Position = vec4(newPos[0],newPos[1],vPosition[2],vPosition[3]);
+	}
+	else
+	{
+		waveDist = 0.0;
+		gl_Position = vPosition;
+	}
+	
+	fPosition = vPosition;
 }
 </script>
 
@@ -26,6 +41,9 @@ void main()
 precision mediump float;
 uniform vec2 corner1;
 uniform vec2 corner2;
+
+varying float waveDist;
+
 varying vec4 fPosition;
 varying vec4 fColor;
 void main()
@@ -37,9 +55,9 @@ void main()
 	vec2 midPos = mix(corner1, corner2, 0.5);
 	float dist = (10.0 * distance( abs(midPos), abs(fragxy) ));
 	
-	gl_FragColor.r = fColor[0] - dist;
-	gl_FragColor.g = fColor[1] - dist;
-	gl_FragColor.b = fColor[2] - dist;
+	gl_FragColor.r = fColor[0] - dist - (waveDist/2.0);
+	gl_FragColor.g = fColor[1] - dist - (waveDist/2.0);
+	gl_FragColor.b = fColor[2] - dist - (waveDist/2.0);
 }
 </script>
 <script id="fragment-shader2" type="x-shader/x-fragment">

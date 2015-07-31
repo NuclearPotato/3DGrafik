@@ -12,6 +12,8 @@ var waterLevel = worldWidth/1.4;
 var program;
 var firstCorner, secondCorner, clickPos, waveLength;
 var mousePosition = [];
+
+var waveRadius = 0.5;
 var stickmanX = 0;
 var stickmanY = 0;
 
@@ -88,14 +90,18 @@ window.onload = function init() {
         //gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
         
 		var clipPos = pixel_to_clip(event.clientX, event.clientY);
+		
+		waveRadius = 0.0;
+		
 		gl.uniform2f(clickPos,clipPos[0],clipPos[1]);
-		gl.uniform1f(waveLength,0);
+		gl.uniform1f(waveLength,waveRadius);
 		
     } );
 
     canvas.addEventListener("mousemove", function(event)
     {
         //Converting from window coordinates to clip coordinates
+		
         mousePosition = pixel_to_clip(event.clientX,event.clientY);
     });
     
@@ -125,10 +131,9 @@ window.onload = function init() {
 function pixel_to_clip(x,y)
 {
 		//Converting from window coordinates to clip coordinates
-        var xPos = -1 + (2*x)/canvas.width;
-        var yPos = -1 + (2*(canvas.height - y))/canvas.height;
-        console.log(canvas.width + "   " + canvas.height);
-        console.log("x: " + xPos + "  y: " + yPos);
+        var xPos = -1 + (2*x)/canvas.clientWidth;
+        var yPos = -1 + (2*(canvas.clientHeight - y))/canvas.clientHeight;
+        //console.log("x: " + xPos + "  y: " + yPos);
         return vec2(xPos,yPos);
 }
 
@@ -153,11 +158,19 @@ function render()
         {
             //gl.clearColor(0.0, 0.0, 0.0, 1.0);
            // gl.drawArrays(gl.LINE_LOOP, i, 4);
-            console.log(block.v1[0] + "   " + block.v1[1]);
-            console.log(block.v4[0] + "   " + block.v4[1]);
+            //console.log(block.v1[0] + "   " + block.v1[1]);
+            //console.log(block.v4[0] + "   " + block.v4[1]);
             console.log(i);
         }
     }
+	
+	//Handle rippling effect
+	if(waveRadius < 0.5)
+	{
+		waveRadius += 0.02
+		gl.uniform1f(waveLength,waveRadius);
+	}
+	
     window.requestAnimFrame(render);
 }
 
