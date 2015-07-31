@@ -1,5 +1,5 @@
 
-var canvas;
+var canvas, canvasPanel;
 var gl;
 var blockArray = [];
 var vBuffer, cBuffer, lBuffer;
@@ -26,7 +26,8 @@ var colors = [
 
 window.onload = function init() {
     canvas = document.getElementById( "gl-canvas" );
-    
+    canvasPanel = document.getElementById( "canvasPanel" );
+
     var Ogl = WebGLUtils.setupWebGL( canvas );
     gl = WebGLDebugUtils.makeDebugContext(Ogl);
     if ( !gl ) { alert( "WebGL isn't available" ); }
@@ -96,7 +97,6 @@ window.onload = function init() {
     {
         //Converting from window coordinates to clip coordinates
         mousePosition = pixel_to_clip(event.clientX,event.clientY);
-        console.log("x: " + x + "  y: " + y  );
     });
     
     document.onkeydown = handleKeyDown;
@@ -124,12 +124,14 @@ window.onload = function init() {
     render();
 }
 
-function pixel_to_clip()
+function pixel_to_clip(x,y)
 {
 		//Converting from window coordinates to clip coordinates
-        var x = -1 + (2*event.clientX)/canvas.width;
-        var y = -1 + (2*(canvas.height - event.clientY))/canvas.height;
-        return vec2(x,y);
+        var xPos = -1 + (2*x)/canvas.width;
+        var yPos = -1 + (2*(canvas.height - y))/canvas.height;
+        console.log(canvas.width + "   " + canvas.height);
+        console.log("x: " + xPos + "  y: " + yPos);
+        return vec2(xPos,yPos);
 }
 
 function render()
