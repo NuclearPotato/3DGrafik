@@ -1,12 +1,12 @@
 
-var canvas, canvasPanel;
+var canvas;
 var gl;
 var blockArray = [];
 var vBuffer, cBuffer, lBuffer;
 var index = 0;
 var cIndex;
-var worldWidth = 40;
-var worldHeight = 32;
+var worldWidth = 20;
+var worldHeight = 16;
 var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
 var program;
@@ -28,7 +28,6 @@ var colors = [
 
 window.onload = function init() {
     canvas = document.getElementById( "gl-canvas" );
-    canvasPanel = document.getElementById( "canvasPanel" );
 
     var Ogl = WebGLUtils.setupWebGL( canvas );
     gl = WebGLDebugUtils.makeDebugContext(Ogl);
@@ -67,10 +66,6 @@ window.onload = function init() {
     var vColor = gl.getAttribLocation( program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
-
-    lBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, lBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 16*5, gl.STATIC_DRAW );
 
 
     var m = document.getElementById("mymenu");
@@ -131,8 +126,14 @@ window.onload = function init() {
 function pixel_to_clip(x,y)
 {
 		//Converting from window coordinates to clip coordinates
+<<<<<<< HEAD
         var xPos = -1 + (2*x)/canvas.clientWidth;
         var yPos = -1 + (2*(canvas.clientHeight - y))/canvas.clientHeight;
+=======
+        var xPos = -1 + (2*x)/canvas.width;
+        var yPos = -1 + (2*(canvas.height - y))/canvas.height;
+        //console.log(canvas.width + "   " + canvas.height);
+>>>>>>> origin/master
         //console.log("x: " + xPos + "  y: " + yPos);
         return vec2(xPos,yPos);
 }
@@ -140,7 +141,7 @@ function pixel_to_clip(x,y)
 function render()
 {
     gl.clear( gl.COLOR_BUFFER_BIT );
-
+    var tempIndex = 0;
     for(var i = 0; i<index; i+=4)
     {
 		var block = blockArray[i/4];
@@ -154,7 +155,7 @@ function render()
         gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
 
         if (mousePosition[0] >= block.v1[0] && mousePosition[1] >= block.v1[1]
-            && mousePosition[0] <= block.v4[0] && mousePosition[1] <= block.v4[1])
+            && mousePosition[0] < block.v4[0] && mousePosition[1] < block.v4[1])
         {
             //gl.clearColor(0.0, 0.0, 0.0, 1.0);
            // gl.drawArrays(gl.LINE_LOOP, i, 4);
@@ -232,23 +233,27 @@ function assignBlockType(i,j)
 function handleBuffer()
 {
     blockArray.forEach(function(entry) {
-        //console.log(entry.v1);
-        gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(entry.v1));
-        gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(entry.v2));
-        gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(entry.v3));
-        gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+3), flatten(entry.v4));
-        gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
-        index += 4;
-
-        blockColor = addColor(entry.blockType); //Assign a color to the block
-
-        //console.log(blockColor);
-        gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-4), flatten(blockColor));
-        gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-3), flatten(blockColor));
-        gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-2), flatten(blockColor));
-        gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-1), flatten(blockColor));
+        allocateToVBuffer(entry);
+        var blockColor = addColor(entry.blockType); //Assign a color to the block
+        allocateToCBuffer(blockColor);
     });
+}
+
+function allocateToVBuffer(entry) {
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(entry.v1));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(entry.v2));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(entry.v3));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+3), flatten(entry.v4));
+    index += 4;
+}
+
+function allocateToCBuffer(color) {
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-4), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-3), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-2), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-1), flatten(color));
 }
 
 //Returns the color of the given blockType
