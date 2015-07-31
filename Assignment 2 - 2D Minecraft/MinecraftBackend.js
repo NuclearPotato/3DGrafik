@@ -9,14 +9,18 @@ var worldWidth = 40;
 var worldHeight = 32;
 var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
-var program;
-var firstCorner, secondCorner, clickPos, waveLength;
 var mousePosition = [];
+var program;
 
+// Uniform variable locations
+var firstCorner, secondCorner, clickPos, waveLength, isAir;
+
+// Variables used for shaders
 var waveRadius = 0.5;
 var stickmanX = 0;
 var stickmanY = 0;
 
+//Block material colors
 var colors = [
     vec4(0.8, 0.8, 1.0, 1.0), // Air
     vec4(0.7, 0.5, 0.0, 1.0), // Dirt
@@ -48,10 +52,12 @@ window.onload = function init() {
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
+	// Uniform resource locations
     firstCorner = gl.getUniformLocation(program,"corner1");
     secondCorner = gl.getUniformLocation(program,"corner2");
     clickPos = gl.getUniformLocation(program,"clickPos");
     waveLength = gl.getUniformLocation(program,"waveLength");
+    isAir = gl.getUniformLocation(program,"isAir");
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -146,7 +152,16 @@ function render()
 		gl.uniform2f(secondCorner,currentBlock.v3[0],currentBlock.v3[1]);
 
         //console.log(i);
-
+		
+		//Avoid gradient on air blocks.
+		if(currentBlock.blockType == "Air")
+		{
+			gl.uniform1f(isAir, 1.0);
+		}
+		else
+		{
+			gl.uniform1f(isAir,0.0);
+		}
 
         gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
 
