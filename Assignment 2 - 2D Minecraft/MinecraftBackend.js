@@ -216,7 +216,6 @@ function handleBuffer()
 {
     blockArray.forEach(function(entry) {
         allocateToVBuffer(entry);
-        index += 4;
         var blockColor = addColor(entry.blockType); //Assign a color to the block
         allocateToCBuffer(blockColor);
     });
@@ -228,6 +227,7 @@ function allocateToVBuffer(entry) {
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(entry.v2));
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(entry.v3));
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+3), flatten(entry.v4));
+    index += 4;
 }
 
 function allocateToCBuffer(color) {
