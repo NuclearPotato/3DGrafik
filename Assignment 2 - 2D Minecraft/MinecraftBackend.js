@@ -17,8 +17,13 @@ var firstCorner, secondCorner, clickPos, waveLength, isAir;
 
 // Variables used for shaders
 var waveRadius = 0.5;
+
 var stickmanX = 0;
 var stickmanY = 0;
+var stickmanArray = [
+        vec2(0.0,0.0),
+        vec2(0.0,0.5)
+    ];
 
 //Block material colors
 var colors = [
@@ -192,7 +197,20 @@ function render()
     }
 
     gl.drawArrays(gl.LINE_LOOP, blockArray.length*4, 4);
-	
+    
+//    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+//    gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(stickmanArray[0]));
+//    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(stickmanArray[1]));
+//    
+//    var stickmanColor = vec4(0.0, 0.0, 0.0, 1.0);
+//    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+//    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-2), flatten(stickmanColor));
+//    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-1), flatten(stickmanColor));    
+//    
+//    index = tempIndex;
+//    
+//    gl.drawArrays(gl.LINES, 0, 2);
+    
 	//Handle rippling effect
 	if(waveRadius < 0.5)
 	{
