@@ -12,6 +12,8 @@ var waterLevel = worldWidth/1.4;
 var program;
 var firstCorner, secondCorner;
 var mousePosition = [];
+var stickmanX;
+var stickmanY;
 
 var colors = [
     vec4(0.8, 0.8, 1.0, 1.0), // Air
@@ -99,6 +101,28 @@ window.onload = function init() {
         mousePosition = vec2(x,y);
         //console.log("x: " + x + "  y: " + y  );
     });
+    
+    document.onkeydown = handleKeyDown;
+    
+    function handleKeyDown(event) {
+    if (event.keyCode === 87) {
+      // W
+      //Jump?
+    }
+    if (event.keyCode === 65) {
+      // A
+      stickmanX -= 0.05;
+    }
+    if (event.keyCode === 83) {
+      // S
+      // Swim?
+    }
+    if (event.keyCode === 68) {
+      // D
+      stickmanY += 0.05;
+    }
+    console.log("x: " + stickmanX + "  y: " + stickmanY  );
+  }
 
     render();
 }
