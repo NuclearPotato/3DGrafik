@@ -96,10 +96,10 @@ window.onload = function init() {
     canvas.addEventListener("mousemove", function(event)
     {
         //Converting from window coordinates to clip coordinates
-        var x = -1 + (2*event.clientX)/800;
-        var y = -1 + (2*(640 - event.clientY))/640;
+        var x = -1 + (2*event.clientX)/canvas.width;
+        var y = -1 + (2*(canvas.height - event.clientY))/canvas.height;
         mousePosition = vec2(x,y);
-        //console.log("x: " + x + "  y: " + y  );
+        console.log("x: " + x + "  y: " + y  );
     });
     
     document.onkeydown = handleKeyDown;
@@ -147,7 +147,9 @@ function render()
             && mousePosition[0] <= block.v4[0] && mousePosition[1] <= block.v4[1])
         {
             //gl.clearColor(0.0, 0.0, 0.0, 1.0);
-            gl.drawArrays(gl.LINE_LOOP, i+12, 4);
+           // gl.drawArrays(gl.LINE_LOOP, i, 4);
+            console.log(block.v1[0] + "   " + block.v1[1]);
+            console.log(block.v4[0] + "   " + block.v4[1]);
             console.log(i);
         }
     }
