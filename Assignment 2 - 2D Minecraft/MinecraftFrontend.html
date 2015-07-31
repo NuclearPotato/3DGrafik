@@ -35,28 +35,7 @@ void main()
 	
 	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
 	vec2 midPos = mix(corner1, corner2, 0.5);
-	float dist = (10.0 * distance( abs(midPos), abs(fragxy) ));
-	
-	gl_FragColor.r = fColor[0] - dist;
-	gl_FragColor.g = fColor[1] - dist;
-	gl_FragColor.b = fColor[2] - dist;
-}
-</script>
-<script id="fragment-shader2" type="x-shader/x-fragment">
-
-precision mediump float;
-uniform vec2 corner1;
-uniform vec2 corner2;
-varying vec4 fPosition;
-varying vec4 fColor;
-void main()
-{
-
-    gl_FragColor = fColor;
-
-	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
-	vec2 midPos = mix(corner1, corner2, 0.5);
-	float dist = (10.0 * distance( abs(midPos), abs(fragxy) ));
+	float dist = (5.0 * distance( abs(midPos), abs(fragxy) ));
 
 	gl_FragColor.r = fColor[0] - dist;
 	gl_FragColor.g = fColor[1] - dist;
