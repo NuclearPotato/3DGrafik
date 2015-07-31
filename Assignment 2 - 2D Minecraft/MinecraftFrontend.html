@@ -6,9 +6,14 @@
 attribute vec4 vPosition;
 attribute vec4 vColor;
 
+
+uniform vec2 corner1;
+uniform vec2 corner2;
 uniform vec2 clickPos;
+
 uniform float waveLength;
 varying float waveDist;
+varying vec2 centerPos;
 
 varying vec4 fPosition;
 varying vec4 fColor;
@@ -18,6 +23,8 @@ void main()
     fColor = vColor;
 	
 	vec2 vPos = vec2(vPosition[0],vPosition[1]);
+	
+	centerPos = mix(corner1, corner2, 0.5);
 	
 	waveDist = distance(vPos, clickPos);
 	
@@ -39,10 +46,8 @@ void main()
 <script id="fragment-shader" type="x-shader/x-fragment">
 
 precision mediump float;
-uniform vec2 corner1;
-uniform vec2 corner2;
-
 varying float waveDist;
+varying vec2 centerPos;
 
 varying vec4 fPosition;
 varying vec4 fColor;
@@ -52,33 +57,11 @@ void main()
     gl_FragColor = fColor;
 	
 	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
-	vec2 midPos = mix(corner1, corner2, 0.5);
-	float dist = (10.0 * distance( abs(midPos), abs(fragxy) ));
+	float dist = (10.0 * distance( abs(centerPos), abs(fragxy) ));
 	
 	gl_FragColor.r = fColor[0] - dist - (waveDist/2.0);
 	gl_FragColor.g = fColor[1] - dist - (waveDist/2.0);
 	gl_FragColor.b = fColor[2] - dist - (waveDist/2.0);
-}
-</script>
-<script id="fragment-shader2" type="x-shader/x-fragment">
-
-precision mediump float;
-uniform vec2 corner1;
-uniform vec2 corner2;
-varying vec4 fPosition;
-varying vec4 fColor;
-void main()
-{
-
-    gl_FragColor = fColor;
-
-	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
-	vec2 midPos = mix(corner1, corner2, 0.5);
-	float dist = (10.0 * distance( abs(midPos), abs(fragxy) ));
-
-	gl_FragColor.r = fColor[0] - dist;
-	gl_FragColor.g = fColor[1] - dist;
-	gl_FragColor.b = fColor[2] - dist;
 }
 </script>
 

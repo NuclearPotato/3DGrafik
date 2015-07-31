@@ -1,0 +1,56 @@
+% article!
+\documentclass[12pt, a4paper]{article}
+
+\usepackage{a4wide}
+
+\usepackage[pdftex]{graphicx}
+\usepackage{verbatim} 
+\usepackage{ulem}
+\usepackage[geometry]{ifsym}
+
+%Deprecated and unstable package, remove if problems arise.
+\usepackage{pdfsync}
+\usepackage[hyphens]{url}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+%Make \autoref appear in danish
+%\addto\extrasdanish
+%  {
+%  \def\figureautorefname{Figur}
+%  }
+
+\usepackage{placeins}
+
+%t1end was deprecated. Replaced by fontenc
+\usepackage[T1]{fontenc}
+
+%Prevents indent of new paragraphs
+\usepackage[parfill]{parskip}
+
+%declare where to look for graphics
+\graphicspath{{gfx/}}
+
+\usepackage{pdfpages}
+
+%wrapper til images (align along tekst)
+\usepackage{wrapfig}
+
+% Til linieret kodeeksempler: The moreverb package extends the verbatim package,
+    % providing a listing environment and a \listinginput command, which
+    % line-number the text of the file. The package also has a \verbatimtabinput
+    % command, that honours TAB characters in the % input (the package’s
+            % listing environment and the \listinginput command also both honour
+            % TAB).
+\usepackage{lastpage}
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\rhead[C]{Side \thepage\ af \pageref{LastPage} }
+%\fancyfoot[C]{Page \thepage\ of \pageref{LastPage} }
+\renewcommand{\headrulewidth}{0.4pt}
+%\renewcommand{\footrulewidth}{0.4pt}
+
+\begin{document}
+\input{body}
+\end{document}

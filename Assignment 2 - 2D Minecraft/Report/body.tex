@@ -1,0 +1,39 @@
+\section{Report}
+
+% NAMES AND STUDENT NRS GO HERE GUYS
+
+% How did you represent and draw the blocks, block-outline and player? why?
+
+Our blocks are represented in an array of vertices, with groups of 4 vertices for each block.
+The initial amount of block is coded as an X and Y amount in the javascript code,
+and the layout of these is made in proportion.
+Blocks are drawn as two triangles using triangle fan, creating triangle of v1,v2,v3 and v2,v3,v4.
+
+% How was your block-material/color implemented? why?
+
+Each blocktype has a predefined color used when rendering each block.
+Color gradient is calculated in the fragment shader, 
+dependant on the position of the fragment (fPosition),
+and the center point of its parent block, which is calculated in the vertex shader, 
+and passed on to the fragment shader.
+
+% Which attributes, uniform and varying did you use, and why?
+
+Variables given to the shaders by javavscript code are uniform, 
+as these are not meant to be changed during rendering.
+Varying variables can be changed during GPU rendering and are 
+used to pass information between the vertex shader and fragment shader.
+
+% How much buffer-data needs to be updated interactively and when? 
+% Did you implement the most optimal approach?
+
+% What does your vertex shaders do?
+
+% What does your fragment shader do?
+The fragment shader decides the color of individual pixels, 
+and uses the centerpos to create a circular gradient.
+
+
+%Please indicate which browser your solution runs on
+Our solution runs on Firefox (and Nightly), Internet Explorer (and Edge), and Chrome.
+Chrome runs very slowly, while the others do not.
