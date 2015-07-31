@@ -96,9 +96,7 @@ window.onload = function init() {
     canvas.addEventListener("mousemove", function(event)
     {
         //Converting from window coordinates to clip coordinates
-        var x = -1 + (2*event.clientX)/canvas.width;
-        var y = -1 + (2*(canvas.height - event.clientY))/canvas.height;
-        mousePosition = vec2(x,y);
+        mousePosition = pixel_to_clip(event.clientX,event.clientY);
         console.log("x: " + x + "  y: " + y  );
     });
     
@@ -125,6 +123,14 @@ window.onload = function init() {
   }
 
     render();
+}
+
+function pixel_to_clip()
+{
+		//Converting from window coordinates to clip coordinates
+        var x = -1 + (2*event.clientX)/canvas.width;
+        var y = -1 + (2*(canvas.height - event.clientY))/canvas.height;
+        return vec2(x,y);
 }
 
 function render()
