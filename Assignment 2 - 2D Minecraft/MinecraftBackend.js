@@ -5,8 +5,8 @@ var blockArray = [];
 var vBuffer, cBuffer, lBuffer;
 var index = 0;
 var cIndex;
-var worldWidth = 20;
-var worldHeight = 16;
+var worldWidth = 40;
+var worldHeight = 32;
 var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
 var program;
@@ -126,14 +126,9 @@ window.onload = function init() {
 function pixel_to_clip(x,y)
 {
 		//Converting from window coordinates to clip coordinates
-<<<<<<< HEAD
         var xPos = -1 + (2*x)/canvas.clientWidth;
         var yPos = -1 + (2*(canvas.clientHeight - y))/canvas.clientHeight;
-=======
-        var xPos = -1 + (2*x)/canvas.width;
-        var yPos = -1 + (2*(canvas.height - y))/canvas.height;
         //console.log(canvas.width + "   " + canvas.height);
->>>>>>> origin/master
         //console.log("x: " + xPos + "  y: " + yPos);
         return vec2(xPos,yPos);
 }
