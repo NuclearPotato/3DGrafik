@@ -55,7 +55,7 @@ window.onload = function init() {
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 8*blockArray.length*4, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, 8*(blockArray.length+1)*4, gl.STATIC_DRAW);
 
     var vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
@@ -63,7 +63,7 @@ window.onload = function init() {
 
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 16*blockArray.length*4, gl.STATIC_DRAW );
+    gl.bufferData(gl.ARRAY_BUFFER, 16*(blockArray.length+1)*4, gl.STATIC_DRAW );
 
     var vColor = gl.getAttribLocation( program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
@@ -138,33 +138,45 @@ function pixel_to_clip(x,y)
 function render()
 {
     gl.clear( gl.COLOR_BUFFER_BIT );
-    var tempIndex = 0;
     for(var i = 0; i<index; i+=4)
     {
-		var block = blockArray[i/4];
+		var currentBlock = blockArray[i/4];
 
-		gl.uniform2f(firstCorner,block.v2[0],block.v2[1]);
-		gl.uniform2f(secondCorner,block.v3[0],block.v3[1]);
+		gl.uniform2f(firstCorner,currentBlock.v2[0],currentBlock.v2[1]);
+		gl.uniform2f(secondCorner,currentBlock.v3[0],currentBlock.v3[1]);
 
         //console.log(i);
 
 
         gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
 
-        if (mousePosition[0] >= block.v1[0] && mousePosition[1] >= block.v1[1]
-            && mousePosition[0] < block.v4[0] && mousePosition[1] < block.v4[1])
+        if (mousePosition[0] >= currentBlock.v1[0] && mousePosition[1] >= currentBlock.v1[1]
+            && mousePosition[0] < currentBlock.v4[0] && mousePosition[1] < currentBlock.v4[1])
         {
             //gl.clearColor(0.0, 0.0, 0.0, 1.0);
             //gl.clear( gl.COLOR_BUFFER_BIT );
-            //allocateToVBuffer(block);
-            //var borderColor = vec4(0.0, 0.0, 0.0, 1.0);
-            //allocateToCBuffer(borderColor);
+
+
+
+            //console.log(index);
+            //console.log(blockArray.length*4);
+            var tempBlock = new block("Border", currentBlock.v1, currentBlock.v2, currentBlock.v4, currentBlock.v3);
+            var tempIndex = index;
+            index = blockArray.length*4;
+            allocateToVBuffer(tempBlock);
+            index += 4;
+            var borderColor = vec4(0.0, 0.0, 0.0, 1.0);
+            allocateToCBuffer(borderColor);
+            index = tempIndex;
+
             //gl.drawArrays(gl.LINE_LOOP, i -4, 4);
             //console.log(block.v1[0] + "   " + block.v1[1]);
             //console.log(block.v4[0] + "   " + block.v4[1]);
             //console.log(i);
         }
     }
+
+    gl.drawArrays(gl.LINE_LOOP, blockArray.length*4, 4);
 	
 	//Handle rippling effect
 	if(waveRadius < 0.5)
