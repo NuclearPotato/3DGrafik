@@ -155,10 +155,14 @@ function render()
             && mousePosition[0] < block.v4[0] && mousePosition[1] < block.v4[1])
         {
             //gl.clearColor(0.0, 0.0, 0.0, 1.0);
-           // gl.drawArrays(gl.LINE_LOOP, i, 4);
+            //gl.clear( gl.COLOR_BUFFER_BIT );
+            //allocateToVBuffer(block);
+            //var borderColor = vec4(0.0, 0.0, 0.0, 1.0);
+            //allocateToCBuffer(borderColor);
+            //gl.drawArrays(gl.LINE_LOOP, i -4, 4);
             //console.log(block.v1[0] + "   " + block.v1[1]);
             //console.log(block.v4[0] + "   " + block.v4[1]);
-            console.log(i);
+            //console.log(i);
         }
     }
 	
@@ -231,6 +235,7 @@ function handleBuffer()
 {
     blockArray.forEach(function(entry) {
         allocateToVBuffer(entry);
+        index += 4;
         var blockColor = addColor(entry.blockType); //Assign a color to the block
         allocateToCBuffer(blockColor);
     });
@@ -242,7 +247,6 @@ function allocateToVBuffer(entry) {
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(entry.v2));
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+2), flatten(entry.v3));
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+3), flatten(entry.v4));
-    index += 4;
 }
 
 function allocateToCBuffer(color) {
