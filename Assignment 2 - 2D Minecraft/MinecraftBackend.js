@@ -10,7 +10,7 @@ var worldHeight = 32;
 var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
 var program;
-var firstCorner, secondCorner;
+var firstCorner, secondCorner, clickPos, waveLength;
 var mousePosition = [];
 var stickmanX;
 var stickmanY;
@@ -46,6 +46,8 @@ window.onload = function init() {
 
     firstCorner = gl.getUniformLocation(program,"corner1");
     secondCorner = gl.getUniformLocation(program,"corner2");
+    clickPos = gl.getUniformLocation(program,"clickPos");
+    waveLength = gl.getUniformLocation(program,"waveLength");
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -82,15 +84,12 @@ window.onload = function init() {
     canvas.addEventListener("mousedown", function(event)
     {
         console.log("x: "+ event.clientX + "  y: " + event.clientY  );
-        gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-        if(true)
-        {
-
-        }
-        else
-        {
-
-        }
+        //gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+        
+		var clipPos = pixel_to_clip(event.clientX, event.clientY);
+		gl.uniform2f(clickPos,clipPos[0],clipPos[1]);
+		gl.uniform1f(waveLength,0);
+		
     } );
 
     canvas.addEventListener("mousemove", function(event)
