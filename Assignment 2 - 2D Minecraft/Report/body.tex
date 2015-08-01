@@ -15,6 +15,7 @@ Block-outline and player vertices are hardcoded at the end of the buffer, after 
 We would have used one buffer for blocks, 
 one for outline and one for player character, 
 but could not get multiple buffers to work.
+It would be simpler to handle the size of the buffer and its contents if we used multiple buffers.
 
 % How was your block-material/color implemented? why?
 
@@ -31,6 +32,10 @@ Varying variables can be changed during GPU rendering and are
 used to pass information between the vertex shader and fragment shader.
 
 % How much buffer-data needs to be updated interactively and when? 
+
+We update both the vertex and the color buffer every render cycle, 
+using the function gl.bufferSubData. ****What does this actually dooo??****
+
 % Did you implement the most optimal approach?
 
 % What does your vertex shaders do?
