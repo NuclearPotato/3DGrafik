@@ -24,6 +24,8 @@ var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
 // Variables used for shaders
 var waveRadius = 0.5;
 
+// Stickman variables
+var stickManInitialIndex = (groundLevel + 1 + worldHeight * 5);
 var stickManOffset = [0.0, 0.0];
 var stickmanX = 0.0;
 var stickmanY = 0.0;
@@ -229,14 +231,6 @@ function render()
 
     //Draw the stickman
     renderStickman();
-
-    //Checks collision
-    var collisionBlock = checkCollision();
-    //console.log(collisionBlock.blockType);
-    if(collisionBlock.blockType != "Air") {
-        borderCollision = true;
-        //console.log(collisionBlock.blockType);
-    }
     
 	//Handle rippling effect
 	if(waveRadius < 0.5)
@@ -251,9 +245,49 @@ function render()
 
 function renderStickman()
 {
-	//set offset in the vertex shader
+	//Checks collision
+    var collisionBlock = checkCollision();
+    //console.log(collisionBlock.blockType);
+    if(collisionBlock.blockType != "Air") {
+        borderCollision = true;
+        //console.log(collisionBlock.blockType);
+    }
 	
-	if(stickmanX > 0.000005 || stickmanX < 0.000005)
+	//Handle collisions
+	
+	var blocktype = collisionBlock.blockType;
+	var blockY = 2.0;
+	
+	if(blocktype == "Lava")
+	{
+		//Lava
+		stickmanY = 0.02;
+	}
+	else if(blocktype == "Dirt" || blocktype == "Grass" || blocktype == "Metal")
+	{
+		//Ground
+		blockY = collisionBlock.v1[1];
+		stickmanY = 0.0;
+	}
+	else if(blocktype == "Water")
+	{
+		//Water sinking
+		stickmanY -= 0.00005;
+	}
+	else
+	{
+		//Gravity
+		stickmanY -= 0.001;
+	}
+	
+	//set offset in the vertex shader
+	if(blockY != 2.0)
+	{
+		var blockSize = (2/worldHeight);
+ 		stickManOffset = [stickManOffset[0]+stickmanX, blockY];
+		gl.uniform4f(offset,stickManOffset[0],stickManOffset[1],0.0,0.0);
+	}
+	else if(stickmanX > 0.000005 || stickmanX < 0.000005)
 	{
 		stickManOffset = [stickManOffset[0]+stickmanX, stickManOffset[1]+stickmanY];
 		gl.uniform4f(offset,stickManOffset[0],stickManOffset[1],0.0,0.0);
@@ -303,8 +337,8 @@ function initializeCoordSystem(columnSize, rowSize)
 
 function handleStickmanBuffer()
 {
-    var blockOfLowerBody = blockArray[groundLevel + 1 + worldHeight * 5];
-    var blockOfUpperBody = blockArray[groundLevel + 2 + worldHeight * 5];
+    var blockOfLowerBody = blockArray[stickManInitialIndex];
+    var blockOfUpperBody = blockArray[stickManInitialIndex+1];
 
     var v1 = blockOfLowerBody.v1;
     var v2 = blockOfLowerBody.v2;
