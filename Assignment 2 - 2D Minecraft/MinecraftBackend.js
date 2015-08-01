@@ -2,6 +2,8 @@
 var canvas;
 var gl;
 var blockArray = [];
+var stickmanLowerArray = [];
+var stickmanUpperArray = [];
 var stickmanArray = [];
 var vBuffer, cBuffer, lBuffer;
 var index = 0;
@@ -32,7 +34,8 @@ var colors = [
     vec4(0.8, 0.0, 0.0, 1.0), // Lava
     vec4(0.5, 0.5, 0.5, 1.0), // Metal
     vec4(0.1, 0.3, 0.8, 1.0), // Water
-    vec4(0.0, 0.0, 0.0, 0.0) // Border color
+    vec4(0.0, 0.0, 0.0, 1.0), // Border color
+    vec4(0.0, 0.0, 0.0, 1.0)  // Stickman color
 ];
 
 
@@ -226,9 +229,7 @@ function render()
 function renderStickman()
 {
     var stickmanIndex = (blockArray.length+1)*4;
-    gl.drawArrays(gl.LINE_STRIP, stickmanIndex, 3);
-
-    stickmanIndex += 3;
+    gl.drawArrays(gl.LINES, stickmanIndex, 8);
 
     //gl.drawArrays(gl.LINES, stickmanIndex, 3);
 
@@ -270,42 +271,39 @@ function initializeCoordSystem(columnSize, rowSize)
 
 function handleStickmanBuffer()
 {
-    stickmanArray = [];
-    var blockOfLowerBody = blockArray[groundLevel+1 + worldHeight*5];
-    var blockOfUpperBody = blockArray[groundLevel+2 + worldHeight*5];
-
-
+    var blockOfLowerBody = blockArray[groundLevel + 1 + worldHeight * 5];
+    var blockOfUpperBody = blockArray[groundLevel + 2 + worldHeight * 5];
 
     var v1 = blockOfLowerBody.v1;
-    var v2 = mix(blockOfLowerBody.v3, blockOfLowerBody.v4, 0.5);
-    var v3 = mix(blockOfUpperBody.v3, blockOfUpperBody.v4, 0.5);
-    var v4 = blockOfLowerBody.v2;
+    var v2 = blockOfLowerBody.v2;
+    var v3 = mix(blockOfLowerBody.v3, blockOfLowerBody.v4, 0.5);
+    var v4 = mix(blockOfUpperBody.v3, blockOfUpperBody.v4, 0.5);
     var v5 = mix(blockOfUpperBody.v1, blockOfUpperBody.v3, 0.5);
     var v6 = mix(blockOfUpperBody.v2, blockOfUpperBody.v4, 0.5);
     //console.log(v3);
-    var stickmanIndex = (blockArray.length+1)*4;
 
-    //allocateToVBuffer(entry, currentIndex)
+    stickmanArray[0] = new block("Stickman", v1, v3, v2, v3);
+    stickmanArray[1] = new block("Stickman", v4, v3, v5, v6);
 
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*stickmanIndex, flatten(v1));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+1), flatten(v2));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+2), flatten(v3));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+3), flatten(v4));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+4), flatten(v5));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+5), flatten(v6));
+    /*
+    stickmanLowerArray.push(v1);
+    stickmanLowerArray.push(v3);
+    stickmanLowerArray.push(v2);
+    stickmanLowerArray.push(v3);
+    stickmanUpperArray.push(v4);
+    stickmanUpperArray.push(v3);
+    stickmanUpperArray.push(v5);
+    stickmanUpperArray.push(v6);
+*/
+    var stickmanIndex = (blockArray.length + 1) * 4;
 
-    stickmanIndex += 6;
+    allocateToVBuffer(stickmanArray[0], stickmanIndex);
+    allocateToVBuffer(stickmanArray[1], stickmanIndex + 4);
 
     var color = vec4(0.0, 0.0, 0.0, 1.0);
 
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-6), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-5), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-4), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-3), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-2), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-1), flatten(color));
+    allocateToCBuffer(color, stickmanIndex + 4);
+    allocateToCBuffer(color, stickmanIndex + 8);
 }
 
 //Assign a blockType to a given spot in the blockArray, depending on
@@ -376,6 +374,9 @@ function addColor(blockType)
             break;
 		case "Border" :
             return colors[6];
+            break;
+        case "Stickman" :
+            return colors[7]
             break;
     }
 }
