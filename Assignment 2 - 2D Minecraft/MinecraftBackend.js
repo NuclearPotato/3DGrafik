@@ -126,7 +126,7 @@ window.onload = function init() {
     }
     if (event.keyCode === 65) {
       // A
-      stickmanX -= 0.05;
+      stickmanX -= 0.0005;
     }
     if (event.keyCode === 83) {
       // S
@@ -134,9 +134,9 @@ window.onload = function init() {
     }
     if (event.keyCode === 68) {
       // D
-      stickmanX += 0.05;
+      stickmanX += 0.0005;
     }
-    console.log("x: " + stickmanX + "  y: " + stickmanY  );
+    //console.log("x: " + stickmanX + "  y: " + stickmanY  );
   };
 
     render();
@@ -217,10 +217,12 @@ function renderStickman()
 {
 	//set offset in the vertex shader
 	
-	if(stickmanX > 0.00005 && stickmanY > 0.00005)
+	if(stickmanX > 0.000005 || stickmanX < 0.000005)
 	{
 		stickManOffset = [stickManOffset[0]+stickmanX, stickManOffset[1]+stickmanY];
-		gl.uniform2f(offset,stickManOffset[0],stickManOffset[1]);
+		gl.uniform4f(offset,stickManOffset[0],stickManOffset[1],0.0,0.0);
+		
+		console.log(stickManOffset);
 	}
 	gl.uniform1f(isSpecial,2.0);
 	
