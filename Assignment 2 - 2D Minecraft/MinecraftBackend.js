@@ -126,7 +126,7 @@ window.onload = function init() {
     }
     if (event.keyCode === 65) {
       // A
-      stickmanX -= 0.0005;
+      stickmanX = -0.01;
     }
     if (event.keyCode === 83) {
       // S
@@ -134,7 +134,27 @@ window.onload = function init() {
     }
     if (event.keyCode === 68) {
       // D
-      stickmanX += 0.0005;
+      stickmanX = 0.01;
+    }
+    //console.log("x: " + stickmanX + "  y: " + stickmanY  );
+  };
+  
+  document.onkeyup = function (event) {
+    if (event.keyCode === 87) {
+      // W
+      //Jump?
+    }
+    if (event.keyCode === 65) {
+      // A
+      stickmanX = 0;
+    }
+    if (event.keyCode === 83) {
+      // S
+      // Swim?
+    }
+    if (event.keyCode === 68) {
+      // D
+      stickmanX = 0;
     }
     //console.log("x: " + stickmanX + "  y: " + stickmanY  );
   };
