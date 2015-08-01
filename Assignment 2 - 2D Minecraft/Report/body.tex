@@ -4,7 +4,7 @@
 
 % How did you represent and draw the blocks, block-outline and player? why?
 
-Our blocks are represented in an array of vertices, with groups of 4 vertices for each block.
+Our blocks are represented as a block object, which hold a block type and 4 vertices.
 The initial amount of block is coded as an X and Y amount in the javascript code,
 and the layout of these is made in proportion.
 Blocks are drawn as two triangles using triangle fan, creating triangle of v1,v2,v3 and v2,v3,v4.
