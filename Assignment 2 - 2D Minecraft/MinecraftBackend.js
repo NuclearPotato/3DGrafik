@@ -2,6 +2,7 @@
 var canvas;
 var gl;
 var blockArray = [];
+var stickmanArray = [];
 var vBuffer, cBuffer, lBuffer;
 var index = 0;
 var cIndex = 0;
@@ -22,10 +23,6 @@ var waveRadius = 0.5;
 
 var stickmanX = 0;
 var stickmanY = 0;
-var stickmanArray = [
-        vec2(0.0,0.0),
-        vec2(0.0,0.5)
-    ];
 
 //Block material colors
 var colors = [
@@ -68,7 +65,7 @@ window.onload = function init() {
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 8*(blockArray.length+1)*4, gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, 8*((blockArray.length+1)*4 + 8), gl.STATIC_DRAW);
 
     var vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
@@ -76,7 +73,7 @@ window.onload = function init() {
 
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 16*(blockArray.length+1)*4, gl.STATIC_DRAW );
+    gl.bufferData(gl.ARRAY_BUFFER, 16*((blockArray.length+1)*4 + 8), gl.STATIC_DRAW );
 
     var vColor = gl.getAttribLocation( program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
@@ -87,6 +84,7 @@ window.onload = function init() {
 
     //Handle the buffer with both the border and color
     handleBuffer();
+    handleStickmanBuffer();
 
     //Create eventListener
     m.addEventListener("click", function() {
@@ -162,13 +160,9 @@ function render()
 
 		//Avoid gradient on air blocks.
 		if(currentBlock.blockType == "Air")
-		{
 			gl.uniform1f(isAir, 1.0);
-		}
 		else
-		{
 			gl.uniform1f(isAir,0.0);
-		}
 
         gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
 
@@ -198,7 +192,13 @@ function render()
 
         gl.drawArrays(gl.LINE_LOOP, blockArray.length*4, 4);
     }
-    
+
+
+    //Draw the stickman
+    renderStickman();
+
+
+
 //    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
 //    gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(stickmanArray[0]));
 //    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(stickmanArray[1]));
@@ -221,6 +221,17 @@ function render()
 
     changeBlock = false;
     window.requestAnimFrame(render);
+}
+
+function renderStickman()
+{
+    var stickmanIndex = (blockArray.length+1)*4;
+    gl.drawArrays(gl.LINE_STRIP, stickmanIndex, 3);
+
+    stickmanIndex += 3;
+
+    //gl.drawArrays(gl.LINES, stickmanIndex, 3);
+
 }
 
 
@@ -255,6 +266,46 @@ function initializeCoordSystem(columnSize, rowSize)
             blockArray.push(new block(blockType,v1,v2,v3,v4));
         }
     }
+}
+
+function handleStickmanBuffer()
+{
+    stickmanArray = [];
+    var blockOfLowerBody = blockArray[groundLevel+1 + worldHeight*5];
+    var blockOfUpperBody = blockArray[groundLevel+2 + worldHeight*5];
+
+
+
+    var v1 = blockOfLowerBody.v1;
+    var v2 = mix(blockOfLowerBody.v3, blockOfLowerBody.v4, 0.5);
+    var v3 = mix(blockOfUpperBody.v3, blockOfUpperBody.v4, 0.5);
+    var v4 = blockOfLowerBody.v2;
+    var v5 = mix(blockOfUpperBody.v1, blockOfUpperBody.v3, 0.5);
+    var v6 = mix(blockOfUpperBody.v2, blockOfUpperBody.v4, 0.5);
+    //console.log(v3);
+    var stickmanIndex = (blockArray.length+1)*4;
+
+    //allocateToVBuffer(entry, currentIndex)
+
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*stickmanIndex, flatten(v1));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+1), flatten(v2));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+2), flatten(v3));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+3), flatten(v4));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+4), flatten(v5));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(stickmanIndex+5), flatten(v6));
+
+    stickmanIndex += 6;
+
+    var color = vec4(0.0, 0.0, 0.0, 1.0);
+
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-6), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-5), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-4), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-3), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-2), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(stickmanIndex-1), flatten(color));
 }
 
 //Assign a blockType to a given spot in the blockArray, depending on
@@ -367,10 +418,7 @@ function checkBlockTypesAround(blockIndex)
     if (!leftBool && blockArray[blockIndex-worldHeight].blockType == "Air")
         airCounter++;
 
-    if (airCounter == numberOfPossibleAir)
-        return false;
-
-    return true;
+    return airCounter != numberOfPossibleAir;
 }
 
 
