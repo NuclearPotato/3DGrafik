@@ -6,10 +6,10 @@
 attribute vec4 vPosition;
 attribute vec4 vColor;
 
-
 uniform vec2 corner1;
 uniform vec2 corner2;
 uniform vec2 clickPos;
+uniform vec2 offset;
 
 uniform float waveLength;
 varying float waveDist;
@@ -46,7 +46,7 @@ void main()
 <script id="fragment-shader" type="x-shader/x-fragment">
 
 precision mediump float;
-uniform float isAir;
+uniform float isSpecial;
 varying float waveDist;
 varying vec2 centerPos;
 
@@ -60,7 +60,7 @@ void main()
 	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
 	float dist = (10.0 * distance( abs(centerPos), abs(fragxy) ));
 	
-	if(isAir == 0.0)
+	if(isSpecial == 0.0)
 	{
 		gl_FragColor.r = fColor[0] - dist - (waveDist/2.0);
 		gl_FragColor.g = fColor[1] - dist - (waveDist/2.0);
