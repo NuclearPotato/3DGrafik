@@ -8,14 +8,18 @@ Our blocks are represented in an array of vertices, with groups of 4 vertices fo
 The initial amount of block is coded as an X and Y amount in the javascript code,
 and the layout of these is made in proportion.
 Blocks are drawn as two triangles using triangle fan, creating triangle of v1,v2,v3 and v2,v3,v4.
+Block-outline and player vertices are hardcoded at the end of the buffer, after the blocks.
+
+We would have used one buffer for blocks, 
+one for outline and one for player character, 
+but could not get multiple buffers to work.
 
 % How was your block-material/color implemented? why?
 
 Each blocktype has a predefined color used when rendering each block.
 Color gradient is calculated in the fragment shader, 
-dependant on the position of the fragment (fPosition),
-and the center point of its parent block, which is calculated in the vertex shader, 
-and passed on to the fragment shader.
+dependant on the distance of the fragment (fPosition) to the center of its parent block,
+which is calculated in the vertex shader and passed on to the fragment shader.
 
 % Which attributes, uniform and varying did you use, and why?
 
