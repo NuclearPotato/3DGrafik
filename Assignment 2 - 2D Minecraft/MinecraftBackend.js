@@ -16,6 +16,7 @@ var mousePosition = [];
 var program;
 var changeBlock = false;
 var chosenBLockType = "Air";
+var borderCollision = false;
 
 // Uniform variable locations
 var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
@@ -126,7 +127,10 @@ window.onload = function init() {
     }
     if (event.keyCode === 65) {
       // A
-      stickmanX = -0.01;
+        //if(!borderCollision)
+            stickmanX = -0.01;
+        borderCollision = false;
+
     }
     if (event.keyCode === 83) {
       // S
@@ -134,7 +138,9 @@ window.onload = function init() {
     }
     if (event.keyCode === 68) {
       // D
-      stickmanX = 0.01;
+        //if(!borderCollision)
+            stickmanX = 0.01;
+        borderCollision = false;
     }
     //console.log("x: " + stickmanX + "  y: " + stickmanY  );
   };
@@ -207,8 +213,10 @@ function render()
         }
     }
 
-    if (checkBlockTypesAround(blockIndex)) //Checks if it is possible to build a block
+    //Checks if it is possible to build a block
+    if (checkBlockTypesAround(blockIndex))
     {
+        //If changeblock is true, it replaces the block with the one chosen in the menu
         if (changeBlock) {
             blockArray[blockIndex].blockType = chosenBLockType;
             var newColor = addColor(chosenBLockType);
@@ -223,7 +231,12 @@ function render()
     renderStickman();
 
     //Checks collision
-    checkCollision();
+    var collisionBlock = checkCollision();
+    //console.log(collisionBlock.blockType);
+    if(collisionBlock.blockType != "Air") {
+        borderCollision = true;
+        //console.log(collisionBlock.blockType);
+    }
     
 	//Handle rippling effect
 	if(waveRadius < 0.5)
@@ -446,26 +459,27 @@ function checkBlockTypesAround(blockIndex)
 
 function checkCollision()
 {
-    var blockCollision = [];
+    var collisionBlock = new block("Air");
     //Find the blocks the vertices is in
-    stickmanArray.forEach(function(entry) {
-        var tempEntry = [entry[0] + stickManOffset[0], entry[1] + stickManOffset[1]];
+        stickmanArray.some(function(entry) {
+            var tempEntry = [entry[0] + stickManOffset[0], entry[1] + stickManOffset[1]];
+            collisionBlock = getCell(tempEntry);
+            return collisionBlock.blockType != "Air";
+        });
 
-        blockCollision.push(getCell(tempEntry));
-        //console.log(getCell(entry));
-
-        if(getCell(tempEntry).blockType != "Air") {
-            console.log(getCell(tempEntry).blockType);
-        }
-    });
+    return collisionBlock;
 }
 
 function getCell(vec)
 {
     var blockWidth = 2/worldWidth;
     var blockHeight = 2/worldHeight;
-
     var xPos = Math.ceil((vec[0]+1)/blockWidth)*worldHeight - worldHeight;
     var yPos = Math.floor((vec[1]+1)/blockHeight);
-    return blockArray[xPos + yPos];
+    var blockIndex = xPos + yPos;
+    if(blockIndex > blockArray.length || blockIndex < 0) {
+        return new block("Border", 0.0, 0.0, 0.0, 0.0);
+    }
+
+    return blockArray[blockIndex];
 }
