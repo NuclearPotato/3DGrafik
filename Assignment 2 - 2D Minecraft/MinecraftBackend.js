@@ -36,7 +36,8 @@ var colors = [
     vec4(0.7, 0.5, 0.0, 1.0), // Dirt
     vec4(0.0, 0.8, 0.0, 1.0), // Grass
     vec4(0.8, 0.0, 0.0, 1.0), // Lava
-    vec4(0.5, 0.5, 0.5, 1.0), // Metal
+    vec4(0.5, 0.5, 0.5, 1.0), // Stone
+    vec4(0.8, 0.8, 0.8, 1.0), // Metal
     vec4(0.1, 0.3, 0.8, 1.0), // Water
     vec4(0.0, 0.0, 0.0, 1.0), // Border color
     vec4(0.0, 0.0, 0.0, 1.0)  // Stickman color
@@ -263,7 +264,7 @@ function renderStickman()
 		//Lava
 		stickmanY = 0.02;
 	}
-	else if(blocktype == "Dirt" || blocktype == "Grass" || blocktype == "Metal")
+	else if(blocktype == "Dirt" || blocktype == "Grass" || blocktype == "Metal" || blocktype == "Stone")
 	{
 		//Ground
 		blockY = collisionBlock.v1[1];
@@ -435,17 +436,20 @@ function addColor(blockType)
         case "Lava" :
             return colors[3];
             break;
-		case "Metal" :
+		case "Stone" :
             return colors[4];
             break;
-		case "Water" :
+		case "Metal" :
             return colors[5];
             break;
-		case "Border" :
+		case "Water" :
             return colors[6];
             break;
-        case "Stickman" :
+		case "Border" :
             return colors[7];
+            break;
+        case "Stickman" :
+            return colors[8];
             break;
     }
 }
