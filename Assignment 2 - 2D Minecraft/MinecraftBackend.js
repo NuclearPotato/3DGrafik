@@ -392,7 +392,7 @@ function addColor(blockType)
             return colors[6];
             break;
         case "Stickman" :
-            return colors[7]
+            return colors[7];
             break;
     }
 }
