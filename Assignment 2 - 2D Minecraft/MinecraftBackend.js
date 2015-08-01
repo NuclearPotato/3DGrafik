@@ -221,6 +221,9 @@ function render()
 
     //Draw the stickman
     renderStickman();
+
+    //Checks collision
+    checkCollision();
     
 	//Handle rippling effect
 	if(waveRadius < 0.5)
@@ -242,7 +245,7 @@ function renderStickman()
 		stickManOffset = [stickManOffset[0]+stickmanX, stickManOffset[1]+stickmanY];
 		gl.uniform4f(offset,stickManOffset[0],stickManOffset[1],0.0,0.0);
 		
-		console.log(stickManOffset);
+		//console.log(stickManOffset);
 	}
 	gl.uniform1f(isSpecial,2.0);
 	
@@ -294,12 +297,15 @@ function handleStickmanBuffer()
     var v2 = blockOfLowerBody.v2;
     var v3 = mix(blockOfLowerBody.v3, blockOfLowerBody.v4, 0.5);
     var v4 = mix(blockOfUpperBody.v3, blockOfUpperBody.v4, 0.5);
+    v4[1] -= 0.005;
     var v5 = mix(blockOfUpperBody.v1, blockOfUpperBody.v3, 0.5);
     var v6 = mix(blockOfUpperBody.v2, blockOfUpperBody.v4, 0.5);
     //console.log(v3);
+    stickmanArray = [v1, v2, v4, v5, v6];
 
-    stickmanArray[0] = new block("Stickman", v1, v3, v2, v3);
-    stickmanArray[1] = new block("Stickman", v4, v3, v5, v6);
+
+    var lowerBody = new block("Stickman", v1, v3, v2, v3);
+    var upperBody = new block("Stickman", v4, v3, v5, v6);
 
     /*
     stickmanLowerArray.push(v1);
@@ -313,8 +319,8 @@ function handleStickmanBuffer()
 */
     var stickmanIndex = (blockArray.length + 1) * 4;
 
-    allocateToVBuffer(stickmanArray[0], stickmanIndex);
-    allocateToVBuffer(stickmanArray[1], stickmanIndex + 4);
+    allocateToVBuffer(lowerBody, stickmanIndex);
+    allocateToVBuffer(upperBody, stickmanIndex + 4);
 
     var color = vec4(0.0, 0.0, 0.0, 1.0);
 
@@ -438,4 +444,28 @@ function checkBlockTypesAround(blockIndex)
     return airCounter != numberOfPossibleAir;
 }
 
+function checkCollision()
+{
+    var blockCollision = [];
+    //Find the blocks the vertices is in
+    stickmanArray.forEach(function(entry) {
+        var tempEntry = [entry[0] + stickManOffset[0], entry[1] + stickManOffset[1]];
 
+        blockCollision.push(getCell(tempEntry));
+        //console.log(getCell(entry));
+
+        if(getCell(tempEntry).blockType != "Air") {
+            console.log(getCell(tempEntry).blockType);
+        }
+    });
+}
+
+function getCell(vec)
+{
+    var blockWidth = 2/worldWidth;
+    var blockHeight = 2/worldHeight;
+
+    var xPos = Math.ceil((vec[0]+1)/blockWidth)*worldHeight - worldHeight;
+    var yPos = Math.floor((vec[1]+1)/blockHeight);
+    return blockArray[xPos + yPos];
+}
