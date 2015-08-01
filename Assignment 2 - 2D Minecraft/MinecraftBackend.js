@@ -18,13 +18,14 @@ var changeBlock = false;
 var chosenBLockType = "Air";
 
 // Uniform variable locations
-var firstCorner, secondCorner, clickPos, waveLength, isAir;
+var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
 
 // Variables used for shaders
 var waveRadius = 0.5;
 
-var stickmanX = 0;
-var stickmanY = 0;
+var stickManOffset = [0.0, 0.0];
+var stickmanX = 0.0;
+var stickmanY = 0.0;
 
 //Block material colors
 var colors = [
@@ -64,7 +65,8 @@ window.onload = function init() {
     secondCorner = gl.getUniformLocation(program,"corner2");
     clickPos = gl.getUniformLocation(program,"clickPos");
     waveLength = gl.getUniformLocation(program,"waveLength");
-    isAir = gl.getUniformLocation(program,"isAir");
+    isSpecial = gl.getUniformLocation(program,"isSpecial"); //1.0 air, 2.0 stickman
+    offset = gl.getUniformLocation(program,"offset");
 
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -124,7 +126,7 @@ window.onload = function init() {
     }
     if (event.keyCode === 65) {
       // A
-      stickmanX -= 0.05;
+      stickmanX -= 0.0005;
     }
     if (event.keyCode === 83) {
       // S
@@ -132,9 +134,9 @@ window.onload = function init() {
     }
     if (event.keyCode === 68) {
       // D
-      stickmanX += 0.05;
+      stickmanX += 0.0005;
     }
-    console.log("x: " + stickmanX + "  y: " + stickmanY  );
+    //console.log("x: " + stickmanX + "  y: " + stickmanY  );
   };
 
     render();
@@ -163,9 +165,9 @@ function render()
 
 		//Avoid gradient on air blocks.
 		if(currentBlock.blockType == "Air")
-			gl.uniform1f(isAir, 1.0);
+			gl.uniform1f(isSpecial, 1.0);
 		else
-			gl.uniform1f(isAir,0.0);
+			gl.uniform1f(isSpecial,0.0);
 
         gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
 
@@ -199,21 +201,6 @@ function render()
 
     //Draw the stickman
     renderStickman();
-
-
-
-//    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-//    gl.bufferSubData(gl.ARRAY_BUFFER, 8*index, flatten(stickmanArray[0]));
-//    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(index+1), flatten(stickmanArray[1]));
-//    
-//    var stickmanColor = vec4(0.0, 0.0, 0.0, 1.0);
-//    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
-//    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-2), flatten(stickmanColor));
-//    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(index-1), flatten(stickmanColor));    
-//    
-//    index = tempIndex;
-//    
-//    gl.drawArrays(gl.LINES, 0, 2);
     
 	//Handle rippling effect
 	if(waveRadius < 0.5)
@@ -228,11 +215,20 @@ function render()
 
 function renderStickman()
 {
+	//set offset in the vertex shader
+	
+	if(stickmanX > 0.000005 || stickmanX < 0.000005)
+	{
+		stickManOffset = [stickManOffset[0]+stickmanX, stickManOffset[1]+stickmanY];
+		gl.uniform4f(offset,stickManOffset[0],stickManOffset[1],0.0,0.0);
+		
+		console.log(stickManOffset);
+	}
+	gl.uniform1f(isSpecial,2.0);
+	
+	//render the stickman
     var stickmanIndex = (blockArray.length+1)*4;
     gl.drawArrays(gl.LINES, stickmanIndex, 8);
-
-    //gl.drawArrays(gl.LINES, stickmanIndex, 3);
-
 }
 
 
