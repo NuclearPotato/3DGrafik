@@ -140,19 +140,19 @@ function addEvents() {
 
 function moveStickMan(event)
 {
-    if ((event.keyCode === 87 && lastKeyPress != 87) || event.srcElement.id == "upButton") { // W
+    if ((event.keyCode === 87 && lastKeyPress != 87) || event.target.id == "upButton") { // W
         // Jump. Can air jump too :)
         lastKeyPress = 87;
         stickmanY = 0.02;
     }
-    if (event.keyCode === 65 || event.srcElement.id == "leftButton")
+    if (event.keyCode === 65 || event.target.id == "leftButton")
     // A
     // Move left
         stickmanX = -0.01;
     if (event.keyCode === 83) {} // S
     // Not Implemented yet
     // Swim?
-    if (event.keyCode === 68 || event.srcElement.id == "rightButton")
+    if (event.keyCode === 68 || event.target.id == "rightButton")
     // D
     // Move right
         stickmanX = 0.01;
@@ -160,13 +160,13 @@ function moveStickMan(event)
 
 function stopStickMan(event)
 {
-    if (event.keyCode === 87 || event.srcElement.id == "upButton") { // W
+    if (event.keyCode === 87 || event.target.id == "upButton") { // W
         stickmanY = 0;
         lastKeyPress = 0;
     }
     if (event.keyCode === 65 || event.keyCode === 68
-        || event.srcElement.id == "leftButton"
-        || event.srcElement.id == "rightButton")  // A or D
+        || event.target.id == "leftButton"
+        || event.target.id == "rightButton")  // A or D
     // Stop moving
         stickmanX = 0;
     if (event.keyCode === 83) {} // S
