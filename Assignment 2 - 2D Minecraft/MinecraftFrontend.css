@@ -15,9 +15,15 @@ body
 #inputPanel
 {
 	height:100px;
+	float:left;
+}
+
+#mymenu
+{
+	float:left;
 }
 
 #buttonPanel
 {
-	float:right;
+	float:left;
 }

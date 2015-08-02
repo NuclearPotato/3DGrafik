@@ -2,8 +2,6 @@
 var canvas;
 var gl;
 var blockArray = [];
-var stickmanLowerArray = [];
-var stickmanUpperArray = [];
 var stickmanArray = [];
 var vBuffer, cBuffer, lBuffer;
 var index = 0;
@@ -16,7 +14,7 @@ var mousePosition = [];
 var program;
 var changeBlock = false;
 var chosenBLockType = "Air";
-var borderCollision = false;
+var lastKeyPress;
 
 // Uniform variable locations
 var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
@@ -25,7 +23,9 @@ var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
 var waveRadius = 0.5;
 
 // Stickman variables
-var stickManInitialIndex = (groundLevel + 1 + worldHeight * 5);
+var stickmanStartXBlock = 5;
+var stickmanStartYBlock = 1;
+var stickManInitialIndex = (worldHeight*stickmanStartXBlock + groundLevel + stickmanStartYBlock);
 var stickManOffset = [0.0, 0.0];
 var stickmanX = 0.0;
 var stickmanY = 0.0;
@@ -58,9 +58,7 @@ window.onload = function init() {
     // Initialize the coordinate system
     initializeCoordSystem(worldWidth,worldHeight);
 
-    //
     //  Load shaders and initialize attribute buffers
-    //
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
@@ -89,95 +87,99 @@ window.onload = function init() {
     gl.enableVertexAttribArray(vColor);
 
 
-    var m = document.getElementById("mymenu");
-
     //Handle the buffer with both the border and color
     handleBuffer();
     handleStickmanBuffer();
 
-    //Create eventListener
+    //Adds eventListeners
+    addEvents();
+
+    document.onkeydown = function (event) {
+        moveStickMan(event);
+    };
+  
+    document.onkeyup = function (event) {
+        stopStickMan(event);
+    };
+    render();
+};
+
+//Adds eventListeners
+function addEvents() {
+
+    var m = document.getElementById("mymenu");
+    var bP = document.getElementById("inputPanel");
+
+
+    //Create eventListener for the menu
     m.addEventListener("click", function() {
         cIndex = m.selectedIndex;
         chosenBLockType = m.value;
-        });
+    });
 
-    //Add eventListener
-    canvas.addEventListener("mousedown", function(event)
-    {
-        console.log("x: "+ event.clientX + "  y: " + event.clientY  );
-        //gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+    bP.addEventListener("mousedown", function(event) {
+        moveStickMan(event)});
+
+    bP.addEventListener("mouseup", function(event) {
+        stopStickMan(event)});
+
+    canvas.addEventListener("mousedown", function(event) {
         changeBlock = true;
-		var clipPos = pixel_to_clip(event.clientX, event.clientY);
-		
-		waveRadius = 0.0;
-		
-		gl.uniform2f(clickPos,clipPos[0],clipPos[1]);
-		gl.uniform1f(waveLength,waveRadius);
-		
+        var clipPos = pixel_to_clip(event.clientX, event.clientY);
+
+        waveRadius = 0.0;
+
+        gl.uniform2f(clickPos,clipPos[0],clipPos[1]);
+        gl.uniform1f(waveLength,waveRadius);
     } );
 
-    canvas.addEventListener("mousemove", function(event)
-    {
+    canvas.addEventListener("mousemove", function(event) {
         //Converting from window coordinates to clip coordinates
-		
         mousePosition = pixel_to_clip(event.clientX,event.clientY);
     });
-    
-    document.onkeydown = function (event) {
-    if (event.keyCode === 87) {
-      // W
-      //Jump?
-    }
-    if (event.keyCode === 65) {
-      // A
-        //if(!borderCollision)
-            stickmanX = -0.01;
-        borderCollision = false;
+}
 
+function moveStickMan(event)
+{
+    if ((event.keyCode === 87 && lastKeyPress != 87) || event.srcElement.id == "upButton") { // W
+        // Jump. Can air jump too :)
+        lastKeyPress = 87;
+        stickmanY = 0.02;
     }
-    if (event.keyCode === 83) {
-      // S
-      // Swim?
-    }
-    if (event.keyCode === 68) {
-      // D
-        //if(!borderCollision)
-            stickmanX = 0.01;
-        borderCollision = false;
-    }
-    //console.log("x: " + stickmanX + "  y: " + stickmanY  );
-  };
-  
-  document.onkeyup = function (event) {
-    if (event.keyCode === 87) {
-      // W
-      //Jump?
-    }
-    if (event.keyCode === 65) {
-      // A
-      stickmanX = 0;
-    }
-    if (event.keyCode === 83) {
-      // S
-      // Swim?
-    }
-    if (event.keyCode === 68) {
-      // D
-      stickmanX = 0;
-    }
-    //console.log("x: " + stickmanX + "  y: " + stickmanY  );
-  };
+    if (event.keyCode === 65 || event.srcElement.id == "leftButton")
+    // A
+    // Move left
+        stickmanX = -0.01;
+    if (event.keyCode === 83) {} // S
+    // Not Implemented yet
+    // Swim?
+    if (event.keyCode === 68 || event.srcElement.id == "rightButton")
+    // D
+    // Move right
+        stickmanX = 0.01;
+}
 
-    render();
-};
+function stopStickMan(event)
+{
+    if (event.keyCode === 87 || event.srcElement.id == "upButton") { // W
+        stickmanY = 0;
+        lastKeyPress = 0;
+    }
+    if (event.keyCode === 65 || event.keyCode === 68
+        || event.srcElement.id == "leftButton"
+        || event.srcElement.id == "rightButton")  // A or D
+    // Stop moving
+        stickmanX = 0;
+    if (event.keyCode === 83) {} // S
+    // Not Implemented yet
+    // Swim?
+}
 
 function pixel_to_clip(x,y)
 {
 		//Converting from window coordinates to clip coordinates
         var xPos = -1 + (2*x)/canvas.clientWidth;
         var yPos = -1 + (2*(canvas.clientHeight - y))/canvas.clientHeight;
-        //console.log(canvas.width + "   " + canvas.height);
-        //console.log("x: " + xPos + "  y: " + yPos);
         return vec2(xPos,yPos);
 }
 
@@ -200,6 +202,7 @@ function render()
 
         gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
 
+        //Reallocate to the buffer, where to render a border around the box, which the mouse is over
         if (mousePosition[0] >= currentBlock.v1[0] && mousePosition[1] >= currentBlock.v1[1]
             && mousePosition[0] < currentBlock.v4[0] && mousePosition[1] < currentBlock.v4[1])
         {
@@ -221,14 +224,24 @@ function render()
     {
         //If changeblock is true, it replaces the block with the one chosen in the menu
         if (changeBlock) {
-            blockArray[blockIndex].blockType = chosenBLockType;
-            var newColor = addColor(chosenBLockType);
+
+            var bType = blockArray[blockIndex].blockType;
+
+            //Removes block if the chosen block is the same as the selected block from the menu
+            if (bType == chosenBLockType) {
+                blockArray[blockIndex].blockType = "Air";
+                blockArray[blockIndex].appearance = assignBlockAppearance("Air");
+                var newColor = addColor("Air");
+            }
+            else {
+                blockArray[blockIndex].blockType = chosenBLockType;
+                blockArray[blockIndex].appearance = assignBlockAppearance(chosenBLockType);
+                var newColor = addColor(chosenBLockType);
+            }
             allocateToCBuffer(newColor, blockIndex*4 + 4);
         }
-
         gl.drawArrays(gl.LINE_LOOP, blockArray.length*4, 4);
     }
-
 
     //Draw the stickman
     renderStickman();
@@ -248,43 +261,34 @@ function renderStickman()
 {
 	//Checks collision
     var collisionBlock = checkCollision();
-    //console.log(collisionBlock.blockType);
-    if(collisionBlock.blockType != "Air") {
-        borderCollision = true;
-        //console.log(collisionBlock.blockType);
-    }
-	
+
 	//Handle collisions
-	
-	var blocktype = collisionBlock.blockType;
+	var blockAppearance = collisionBlock.appearance;
 	var blockY = 2.0;
 	
-	if(blocktype == "Lava")
-	{
-		//Lava
+	if(blockAppearance == "Dangerous") //Lava
 		stickmanY = 0.02;
-	}
-	else if(blocktype == "Dirt" || blocktype == "Grass" || blocktype == "Metal" || blocktype == "Stone")
-	{
-		//Ground
+    else if(blockAppearance == "Solid") //Ground
+    {
 		blockY = collisionBlock.v1[1];
 		stickmanY = 0.0;
 	}
-	else if(blocktype == "Water")
-	{
-		//Water sinking
+	else if(blockAppearance == "Liquid") //Water
 		stickmanY -= 0.00005;
-	}
-	else
-	{
-		//Gravity
+    else if(blockAppearance == "Border") //At the border of the map
+    {
+
+        stickManOffset[0] = 0.0 - collisionBlock.v1;
+        stickManOffset[1] = 0.0 + collisionBlock.v2;
+        stickmanX = 0.0;
+        stickmanY = 0.0;
+    }
+	else //Gravity
 		stickmanY -= 0.001;
-	}
-	
+
 	//set offset in the vertex shader
 	if(blockY != 2.0)
 	{
-		var blockSize = (2/worldHeight);
  		stickManOffset = [stickManOffset[0]+stickmanX, blockY];
 		gl.uniform4f(offset,stickManOffset[0],stickManOffset[1],0.0,0.0);
 	}
@@ -292,8 +296,6 @@ function renderStickman()
 	{
 		stickManOffset = [stickManOffset[0]+stickmanX, stickManOffset[1]+stickmanY];
 		gl.uniform4f(offset,stickManOffset[0],stickManOffset[1],0.0,0.0);
-		
-		//console.log(stickManOffset);
 	}
 	gl.uniform1f(isSpecial,2.0);
 	
@@ -303,19 +305,20 @@ function renderStickman()
 }
 
 
-function block(blockType, v1, v2, v3, v4)
+function block(blockType, v1, v2, v3, v4, appearance)
 {
     this.blockType = blockType;
     this.v1 = v1;
     this.v2 = v2;
     this.v3 = v3;
     this.v4 = v4;
+    this.appearance = appearance;
 }
 
 function initializeCoordSystem(columnSize, rowSize)
 {
-    var cWidth = 2; //canvas.width;
-    var cHeight = 2; //canvas.height;
+    var cWidth = 2; //canvas.width in clip coords;
+    var cHeight = 2; //canvas.height in clip coords;
 
     var xPixels = cWidth/columnSize;
     var yPixels = cHeight/rowSize;
@@ -330,12 +333,41 @@ function initializeCoordSystem(columnSize, rowSize)
             var v4 = vec2(xPixels*(i + 1) - 1, yPixels*(j + 1) - 1);
 
             var blockType = assignBlockType(i,j);
-			
-            blockArray.push(new block(blockType,v1,v2,v3,v4));
+			var blockAppearance = assignBlockAppearance(blockType);
+
+            blockArray.push(new block(blockType,v1,v2,v3,v4,blockAppearance));
         }
     }
 }
 
+//Assign a blockType to a given spot in the blockArray, depending on
+//the specification of the map level.
+function assignBlockType(i,j)
+{
+    if (j > groundLevel)
+       return "Air";
+    else if (j === groundLevel && i <= waterLevel)
+        return "Grass";
+    else if (i > waterLevel)
+        return "Water";
+    else
+        return "Dirt";
+}
+
+//Return the appearance of a block, depended on its blockType
+function assignBlockAppearance(blockType)
+{
+    if (blockType == "Air")
+        return "Air";
+    if (blockType == "Lava")
+        return "Dangerous";
+    if (blockType == "Water")
+        return "Liquid";
+    if (blockType == "Dirt" || blockType == "Grass" || blockType == "Metal" ||  blockType == "Stone")
+        return "Solid";
+}
+
+//Calculates the clip coords of the vertices of the stickman
 function handleStickmanBuffer()
 {
     var blockOfLowerBody = blockArray[stickManInitialIndex];
@@ -345,52 +377,22 @@ function handleStickmanBuffer()
     var v2 = blockOfLowerBody.v2;
     var v3 = mix(blockOfLowerBody.v3, blockOfLowerBody.v4, 0.5);
     var v4 = mix(blockOfUpperBody.v3, blockOfUpperBody.v4, 0.5);
-    v4[1] -= 0.005;
+    v4[1] -= 0.005; //gets a smaller neck, which result in that the stickman is 2 blocks high
     var v5 = mix(blockOfUpperBody.v1, blockOfUpperBody.v3, 0.5);
     var v6 = mix(blockOfUpperBody.v2, blockOfUpperBody.v4, 0.5);
-    //console.log(v3);
     stickmanArray = [v1, v2, v4, v5, v6];
-
 
     var lowerBody = new block("Stickman", v1, v3, v2, v3);
     var upperBody = new block("Stickman", v4, v3, v5, v6);
 
-    /*
-    stickmanLowerArray.push(v1);
-    stickmanLowerArray.push(v3);
-    stickmanLowerArray.push(v2);
-    stickmanLowerArray.push(v3);
-    stickmanUpperArray.push(v4);
-    stickmanUpperArray.push(v3);
-    stickmanUpperArray.push(v5);
-    stickmanUpperArray.push(v6);
-*/
     var stickmanIndex = (blockArray.length + 1) * 4;
 
+    //Allocates the stickman positions in the buffers
     allocateToVBuffer(lowerBody, stickmanIndex);
     allocateToVBuffer(upperBody, stickmanIndex + 4);
-
     var color = vec4(0.0, 0.0, 0.0, 1.0);
-
     allocateToCBuffer(color, stickmanIndex + 4);
     allocateToCBuffer(color, stickmanIndex + 8);
-}
-
-//Assign a blockType to a given spot in the blockArray, depending on
-//the specification of the map level.
-function assignBlockType(i,j)
-{
-    if (j > groundLevel)
-       return "Air";
-
-    else if (j === groundLevel && i <= waterLevel)
-        return "Grass";
-
-    else if (i > waterLevel)
-        return "Water";
-
-    else
-        return "Dirt";
 }
 
 function handleBuffer()
@@ -497,15 +499,32 @@ function checkBlockTypesAround(blockIndex)
 
 function checkCollision()
 {
-    var collisionBlock = new block("Air");
-    //Find the blocks the vertices is in
+    var priorityNumber = 100;
+    var currentCollisionBlock;
+    var finalCollisionBlock = new block("Air");
+    //Finds the blocks the vertices is in and check for appearance of these blocks
         stickmanArray.some(function(entry) {
             var tempEntry = [entry[0] + stickManOffset[0], entry[1] + stickManOffset[1]];
-            collisionBlock = getCell(tempEntry);
-            return collisionBlock.blockType != "Air";
-        });
+            currentCollisionBlock = getCell(tempEntry);
 
-    return collisionBlock;
+            if (currentCollisionBlock.appearance == "Border")
+                return finalCollisionBlock = currentCollisionBlock;
+
+            if (currentCollisionBlock.appearance == "Dangerous") {
+                finalCollisionBlock = currentCollisionBlock;
+                priorityNumber = 1;
+            }
+
+            if (currentCollisionBlock.appearance == "Solid" && priorityNumber > 2) {
+                finalCollisionBlock = currentCollisionBlock;
+                priorityNumber = 2;
+            }
+            else if (currentCollisionBlock.appearance == "Liquid" && priorityNumber > 3) {
+                finalCollisionBlock = currentCollisionBlock;
+                priorityNumber = 3;
+            }
+        });
+    return finalCollisionBlock;
 }
 
 function getCell(vec)
@@ -515,9 +534,17 @@ function getCell(vec)
     var xPos = Math.ceil((vec[0]+1)/blockWidth)*worldHeight - worldHeight;
     var yPos = Math.floor((vec[1]+1)/blockHeight);
     var blockIndex = xPos + yPos;
-    if(blockIndex > blockArray.length || blockIndex < 0) {
-        return new block("Border", 0.0, 0.0, 0.0, 0.0);
-    }
+    if(blockIndex > blockArray.length)
+    if(blockIndex > blockArray.length)
+        return new block("Border",
+                         2/worldWidth * stickmanStartXBlock - 0.001, //Values of the new stickman position
+                         stickManOffset[1],
+                         0.0, 0.0, "Border");
 
+    if(blockIndex < 0)
+        return new block("Border",
+                         2/worldWidth * (stickmanStartXBlock - worldWidth + 1) + 0.001, //Values of the new stickman position
+                         stickManOffset[1],
+                         0.0, 0.0, "Border");
     return blockArray[blockIndex];
 }
