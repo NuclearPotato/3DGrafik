@@ -43,7 +43,6 @@ var colors = [
     vec4(0.0, 0.0, 0.0, 1.0)  // Stickman color
 ];
 
-
 window.onload = function init() {
     canvas = document.getElementById( "gl-canvas" );
 
