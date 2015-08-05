@@ -113,6 +113,88 @@ window.onload = function init() {
 };
 
 //
+// Coordinate system and buffer initializers
+//
+function initializeCoordSystem(columnSize, rowSize)
+{
+    var cWidth = 2; //canvas.width in clip coords;
+    var cHeight = 2; //canvas.height in clip coords;
+
+    var xPixels = cWidth/columnSize;
+    var yPixels = cHeight/rowSize;
+
+    for (i = 0 ; i < columnSize ; i++)
+    {
+        for (j = 0 ; j < rowSize ; j++)
+        {
+            var v1 = vec2(xPixels*i - 1, yPixels*j - 1);
+            var v2 = vec2(xPixels*(i + 1) - 1, yPixels*j - 1);
+            var v3 = vec2(xPixels*i - 1, yPixels*(j + 1) - 1);
+            var v4 = vec2(xPixels*(i + 1) - 1, yPixels*(j + 1) - 1);
+
+            var blockType = assignBlockType(i,j);
+			var blockAppearance = assignBlockAppearance(blockType);
+
+            blockArray.push(new block(blockType,v1,v2,v3,v4,blockAppearance));
+        }
+    }
+}
+
+//Calculates the clip coords of the vertices of the stickman
+function handleStickmanBuffer()
+{
+    var blockOfLowerBody = blockArray[stickManInitialIndex];
+    var blockOfUpperBody = blockArray[stickManInitialIndex+1];
+
+    var v1 = blockOfLowerBody.v1;
+    var v2 = blockOfLowerBody.v2;
+    var v3 = mix(blockOfLowerBody.v3, blockOfLowerBody.v4, 0.5);
+    var v4 = mix(blockOfUpperBody.v3, blockOfUpperBody.v4, 0.5);
+    v4[1] -= 0.005; //gets a smaller neck, which result in that the stickman is 2 blocks high
+    var v5 = mix(blockOfUpperBody.v1, blockOfUpperBody.v3, 0.5);
+    var v6 = mix(blockOfUpperBody.v2, blockOfUpperBody.v4, 0.5);
+    stickmanArray = [v1, v2, v4, v5, v6];
+
+    var lowerBody = new block("Stickman", v1, v3, v2, v3);
+    var upperBody = new block("Stickman", v4, v3, v5, v6);
+
+    var stickmanIndex = (blockArray.length + 1) * 4;
+
+    //Allocates the stickman positions in the buffers
+    allocateToVBuffer(lowerBody, stickmanIndex);
+    allocateToVBuffer(upperBody, stickmanIndex + 4);
+    var color = vec4(0.0, 0.0, 0.0, 1.0);
+    allocateToCBuffer(color, stickmanIndex + 4);
+    allocateToCBuffer(color, stickmanIndex + 8);
+}
+
+function handleBuffer()
+{
+    blockArray.forEach(function(entry) {
+        allocateToVBuffer(entry, index);
+        index += 4;
+        var blockColor = addColor(entry.blockType); //Assign a color to the block
+        allocateToCBuffer(blockColor, index);
+    });
+}
+
+function allocateToVBuffer(entry, currentIndex) {
+    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*currentIndex, flatten(entry.v1));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+1), flatten(entry.v2));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+2), flatten(entry.v3));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+3), flatten(entry.v4));
+}
+
+function allocateToCBuffer(color,currentIndex) {
+    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-4), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-3), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-2), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-1), flatten(color));
+}
+
+//
 // Event listening functions
 //
 function addEvents() 
@@ -150,13 +232,13 @@ function addEvents()
         mousePosition = pixel_to_clip(event.clientX,event.clientY);
     });
 	
-	document.onkeydown = function (event) {
+	document.addEventListener("keydown", function(event) {
         moveStickMan(event);
-    };
+    });
   
-    document.onkeyup = function (event) {
+	document.addEventListener("keyup", function (event) {
         stopStickMan(event);
-    };
+    });
 }
 
 function moveStickMan(event)
@@ -195,14 +277,9 @@ function stopStickMan(event)
     // Swim?
 }
 
-function pixel_to_clip(x,y)
-{
-		//Converting from window coordinates to clip coordinates
-        var xPos = -1 + (2*x)/canvas.clientWidth;
-        var yPos = -1 + (2*(canvas.clientHeight - y))/canvas.clientHeight;
-        return vec2(xPos,yPos);
-}
-
+//
+// Rendering
+//
 function render()
 {
     var blockIndex = 0;
@@ -324,110 +401,15 @@ function renderStickman()
     gl.drawArrays(gl.LINES, stickmanIndex, 8);
 }
 
-function initializeCoordSystem(columnSize, rowSize)
+//
+// Helper functions
+//
+function pixel_to_clip(x,y)
 {
-    var cWidth = 2; //canvas.width in clip coords;
-    var cHeight = 2; //canvas.height in clip coords;
-
-    var xPixels = cWidth/columnSize;
-    var yPixels = cHeight/rowSize;
-
-    for (i = 0 ; i < columnSize ; i++)
-    {
-        for (j = 0 ; j < rowSize ; j++)
-        {
-            var v1 = vec2(xPixels*i - 1, yPixels*j - 1);
-            var v2 = vec2(xPixels*(i + 1) - 1, yPixels*j - 1);
-            var v3 = vec2(xPixels*i - 1, yPixels*(j + 1) - 1);
-            var v4 = vec2(xPixels*(i + 1) - 1, yPixels*(j + 1) - 1);
-
-            var blockType = assignBlockType(i,j);
-			var blockAppearance = assignBlockAppearance(blockType);
-
-            blockArray.push(new block(blockType,v1,v2,v3,v4,blockAppearance));
-        }
-    }
-}
-
-//Assign a blockType to a given spot in the blockArray, depending on
-//the specification of the map level.
-function assignBlockType(i,j)
-{
-    if (j > groundLevel)
-       return "Air";
-    else if (j === groundLevel && i <= waterLevel)
-        return "Grass";
-    else if (i > waterLevel)
-        return "Water";
-    else
-        return "Dirt";
-}
-
-//Return the appearance of a block, depended on its blockType
-function assignBlockAppearance(blockType)
-{
-    if (blockType == "Air")
-        return "Air";
-    if (blockType == "Lava")
-        return "Dangerous";
-    if (blockType == "Water")
-        return "Liquid";
-    if (blockType == "Dirt" || blockType == "Grass" || blockType == "Metal" ||  blockType == "Stone")
-        return "Solid";
-}
-
-//Calculates the clip coords of the vertices of the stickman
-function handleStickmanBuffer()
-{
-    var blockOfLowerBody = blockArray[stickManInitialIndex];
-    var blockOfUpperBody = blockArray[stickManInitialIndex+1];
-
-    var v1 = blockOfLowerBody.v1;
-    var v2 = blockOfLowerBody.v2;
-    var v3 = mix(blockOfLowerBody.v3, blockOfLowerBody.v4, 0.5);
-    var v4 = mix(blockOfUpperBody.v3, blockOfUpperBody.v4, 0.5);
-    v4[1] -= 0.005; //gets a smaller neck, which result in that the stickman is 2 blocks high
-    var v5 = mix(blockOfUpperBody.v1, blockOfUpperBody.v3, 0.5);
-    var v6 = mix(blockOfUpperBody.v2, blockOfUpperBody.v4, 0.5);
-    stickmanArray = [v1, v2, v4, v5, v6];
-
-    var lowerBody = new block("Stickman", v1, v3, v2, v3);
-    var upperBody = new block("Stickman", v4, v3, v5, v6);
-
-    var stickmanIndex = (blockArray.length + 1) * 4;
-
-    //Allocates the stickman positions in the buffers
-    allocateToVBuffer(lowerBody, stickmanIndex);
-    allocateToVBuffer(upperBody, stickmanIndex + 4);
-    var color = vec4(0.0, 0.0, 0.0, 1.0);
-    allocateToCBuffer(color, stickmanIndex + 4);
-    allocateToCBuffer(color, stickmanIndex + 8);
-}
-
-function handleBuffer()
-{
-    blockArray.forEach(function(entry) {
-        allocateToVBuffer(entry, index);
-        index += 4;
-        var blockColor = addColor(entry.blockType); //Assign a color to the block
-        allocateToCBuffer(blockColor, index);
-    });
-}
-
-function allocateToVBuffer(entry, currentIndex) {
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*currentIndex, flatten(entry.v1));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+1), flatten(entry.v2));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+2), flatten(entry.v3));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+3), flatten(entry.v4));
-}
-
-function allocateToCBuffer(color,currentIndex) {
-    gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-4), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-3), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-2), flatten(color));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-1), flatten(color));
+		//Converting from window coordinates to clip coordinates
+        var xPos = -1 + (2*x)/canvas.clientWidth;
+        var yPos = -1 + (2*(canvas.clientHeight - y))/canvas.clientHeight;
+        return vec2(xPos,yPos);
 }
 
 //Returns the color of the given blockType
@@ -463,6 +445,33 @@ function addColor(blockType)
             return colors[8];
             break;
     }
+}
+
+//Assign a blockType to a given spot in the blockArray, depending on
+//the specification of the map level.
+function assignBlockType(i,j)
+{
+    if (j > groundLevel)
+       return "Air";
+    else if (j === groundLevel && i <= waterLevel)
+        return "Grass";
+    else if (i > waterLevel)
+        return "Water";
+    else
+        return "Dirt";
+}
+
+//Return the appearance of a block, depended on its blockType
+function assignBlockAppearance(blockType)
+{
+    if (blockType == "Air")
+        return "Air";
+    if (blockType == "Lava")
+        return "Dangerous";
+    if (blockType == "Water")
+        return "Liquid";
+    if (blockType == "Dirt" || blockType == "Grass" || blockType == "Metal" ||  blockType == "Stone")
+        return "Solid";
 }
 
 //Returns false if there is only air around the block in the blockArray
