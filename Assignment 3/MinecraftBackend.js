@@ -112,9 +112,9 @@ window.onload = function init() {
     render();
 };
 
-//
+// ********************************************
 // Coordinate system and buffer initializers
-//
+// ********************************************
 function initializeCoordSystem(columnSize, rowSize)
 {
     var cWidth = 2; //canvas.width in clip coords;
@@ -194,9 +194,9 @@ function allocateToCBuffer(color,currentIndex) {
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-1), flatten(color));
 }
 
-//
+// ********************************************
 // Event listening functions
-//
+// ********************************************
 function addEvents() 
 {
 
@@ -277,9 +277,9 @@ function stopStickMan(event)
     // Swim?
 }
 
-//
+// ********************************************
 // Rendering
-//
+// ********************************************
 function render()
 {
     var blockIndex = 0;
@@ -401,9 +401,9 @@ function renderStickman()
     gl.drawArrays(gl.LINES, stickmanIndex, 8);
 }
 
-//
+// ********************************************
 // Helper functions
-//
+// ********************************************
 function pixel_to_clip(x,y)
 {
 		//Converting from window coordinates to clip coordinates
