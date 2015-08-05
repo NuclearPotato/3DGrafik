@@ -19,6 +19,9 @@ var lastKeyPress;
 // Uniform variable locations
 var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
 
+// Shader attributes locations
+var vPosition, vColor;
+
 // Variables used for shaders
 var waveRadius = 0.5;
 
@@ -43,7 +46,19 @@ var colors = [
     vec4(0.0, 0.0, 0.0, 1.0)  // Stickman color
 ];
 
+// The block function object
+function block(blockType, v1, v2, v3, v4, appearance)
+{
+    this.blockType = blockType;
+    this.v1 = v1;
+    this.v2 = v2;
+    this.v3 = v3;
+    this.v4 = v4;
+    this.appearance = appearance;
+}
+
 window.onload = function init() {
+	// Initialize the canvas and GL context
     canvas = document.getElementById( "gl-canvas" );
 
     var Ogl = WebGLUtils.setupWebGL( canvas );
@@ -57,7 +72,7 @@ window.onload = function init() {
     // Initialize the coordinate system
     initializeCoordSystem(worldWidth,worldHeight);
 
-    //  Load shaders and initialize attribute buffers
+    // Load shaders
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
 
@@ -68,20 +83,21 @@ window.onload = function init() {
     waveLength = gl.getUniformLocation(program,"waveLength");
     isSpecial = gl.getUniformLocation(program,"isSpecial"); //1.0 air, 2.0 stickman
     offset = gl.getUniformLocation(program,"offset");
+	
+	// Attribute resource locations
+	vPosition = gl.getAttribLocation( program, "vPosition");
+	vColor = gl.getAttribLocation( program, "vColor");
 
+	// Initial buffer creation and initial attribute assignment
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, 8*((blockArray.length+1)*4 + 8), gl.STATIC_DRAW);
-
-    var vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, 16*((blockArray.length+1)*4 + 8), gl.STATIC_DRAW );
-
-    var vColor = gl.getAttribLocation( program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
@@ -92,23 +108,18 @@ window.onload = function init() {
 
     //Adds eventListeners
     addEvents();
-
-    document.onkeydown = function (event) {
-        moveStickMan(event);
-    };
-  
-    document.onkeyup = function (event) {
-        stopStickMan(event);
-    };
+	
     render();
 };
 
-//Adds eventListeners
-function addEvents() {
+//
+// Event listening functions
+//
+function addEvents() 
+{
 
-    var m = document.getElementById("mymenu");
+    var m = document.getElementById("blockMenu");
     var bP = document.getElementById("inputPanel");
-
 
     //Create eventListener for the menu
     m.addEventListener("click", function() {
@@ -117,10 +128,12 @@ function addEvents() {
     });
 
     bP.addEventListener("mousedown", function(event) {
-        moveStickMan(event)});
+        moveStickMan(event)
+	});
 
     bP.addEventListener("mouseup", function(event) {
-        stopStickMan(event)});
+        stopStickMan(event)
+	});
 
     canvas.addEventListener("mousedown", function(event) {
         changeBlock = true;
@@ -130,12 +143,20 @@ function addEvents() {
 
         gl.uniform2f(clickPos,clipPos[0],clipPos[1]);
         gl.uniform1f(waveLength,waveRadius);
-    } );
+    });
 
     canvas.addEventListener("mousemove", function(event) {
         //Converting from window coordinates to clip coordinates
         mousePosition = pixel_to_clip(event.clientX,event.clientY);
     });
+	
+	document.onkeydown = function (event) {
+        moveStickMan(event);
+    };
+  
+    document.onkeyup = function (event) {
+        stopStickMan(event);
+    };
 }
 
 function moveStickMan(event)
@@ -301,17 +322,6 @@ function renderStickman()
 	//render the stickman
     var stickmanIndex = (blockArray.length+1)*4;
     gl.drawArrays(gl.LINES, stickmanIndex, 8);
-}
-
-
-function block(blockType, v1, v2, v3, v4, appearance)
-{
-    this.blockType = blockType;
-    this.v1 = v1;
-    this.v2 = v2;
-    this.v3 = v3;
-    this.v4 = v4;
-    this.appearance = appearance;
 }
 
 function initializeCoordSystem(columnSize, rowSize)
