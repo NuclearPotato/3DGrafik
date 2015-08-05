@@ -70,7 +70,7 @@ void main()
     gl_FragColor = fColor;
 	
 	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
-	float dist = (10.0 * distance( abs(centerPos), abs(fragxy) ));
+	float dist = (2.0 * distance( abs(centerPos), abs(fragxy) ));
 	
 	if(isAir == 0.0)
 	{

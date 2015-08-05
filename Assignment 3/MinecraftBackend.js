@@ -6,8 +6,9 @@ var stickmanArray = [];
 var vBuffer, cBuffer, lBuffer;
 var index = 0;
 var cIndex = 0;
-var worldWidth = 40;
-var worldHeight = 32;
+var worldWidth = 6;
+var worldHeight = 6;
+var worldDepth = 5;
 var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
 var mousePosition = [];
@@ -15,6 +16,9 @@ var program;
 var changeBlock = false;
 var chosenBLockType = "Air";
 var lastKeyPress;
+
+// World grid variables
+var worldGrid = [];
 
 // Uniform variable locations
 var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
@@ -26,7 +30,7 @@ var vPosition, vColor;
 var waveRadius = 0.5;
 
 // Stickman variables
-var stickmanStartXBlock = 5;
+var stickmanStartXBlock = 1;
 var stickmanStartYBlock = 1;
 var stickManInitialIndex = (worldHeight*stickmanStartXBlock + groundLevel + stickmanStartYBlock);
 var stickManOffset = [0.0, 0.0];
@@ -71,6 +75,7 @@ window.onload = function init() {
 
     // Initialize the coordinate system
     initializeCoordSystem(worldWidth,worldHeight);
+    initialize3DCoordSystem(worldWidth, worldHeight, worldDepth);
 
     // Load shaders
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
@@ -91,31 +96,36 @@ window.onload = function init() {
 	// Initial buffer creation and initial attribute assignment
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 8*((blockArray.length+1)*4 + 8), gl.STATIC_DRAW);
+    gl.bufferData(gl.ARRAY_BUFFER, 12*worldGrid.length, gl.STATIC_DRAW);
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 16*((blockArray.length+1)*4 + 8), gl.STATIC_DRAW );
+    gl.bufferData(gl.ARRAY_BUFFER, 16*(8*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
+    iBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, 4*(8*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
 
     //Handle the buffer with both the border and color
     handleBuffer();
-    handleStickmanBuffer();
+    //handleStickmanBuffer();
+
+
 
     //Adds eventListeners
-    addEvents();
+    //addEvents();
 	
-    render();
+    //render();
 };
 
 // ********************************************
 // Coordinate system and buffer initializers
 // ********************************************
-function initializeCoordSystem(columnSize, rowSize)
+function initializeCoordSystem(columnSize, rowSize, depthSize)
 {
     var cWidth = 2; //canvas.width in clip coords;
     var cHeight = 2; //canvas.height in clip coords;
@@ -140,9 +150,31 @@ function initializeCoordSystem(columnSize, rowSize)
     }
 }
 
+function initialize3DCoordSystem(columnSize, rowSize, depthSize)
+{
+    var cWidth = 2; //canvas.width in clip coords;
+    var cHeight = 2; //canvas.height in clip coords;
+    var cDepth = 2;
+
+    var xPixels = cWidth/columnSize;
+    var yPixels = cHeight/rowSize;
+    var zPixels = cDepth/depthSize;
+
+    for (var i = 0 ; i < depthSize ; i++) {
+        for (var j = 0 ; j < rowSize ; j++) {
+            for (var k = 0 ; k < columnSize ; k++) {
+                var vertice = vec3(xPixels*k - 1, yPixels*j - 1, zPixels*i - 1);
+                worldGrid.push(vertice);
+                //console.log(vertice);
+            }
+        }
+    }
+}
+
 //Calculates the clip coords of the vertices of the stickman
 function handleStickmanBuffer()
 {
+    console.log(stickManInitialIndex)
     var blockOfLowerBody = blockArray[stickManInitialIndex];
     var blockOfUpperBody = blockArray[stickManInitialIndex+1];
 
@@ -168,8 +200,12 @@ function handleStickmanBuffer()
     allocateToCBuffer(color, stickmanIndex + 8);
 }
 
-function handleBuffer()
-{
+function handleBuffer() {
+
+    worldGrid.forEach(function(entry) {
+
+    });
+
     blockArray.forEach(function(entry) {
         allocateToVBuffer(entry, index);
         index += 4;
@@ -566,3 +602,9 @@ function getCell(vec)
                          0.0, 0.0, "Border");
     return blockArray[blockIndex];
 }
+
+function calculatePos(x, y, z) {
+    return x + y*worldWidth + z*worldWidth*worldHeight;
+}
+
+
