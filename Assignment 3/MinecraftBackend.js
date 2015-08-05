@@ -377,7 +377,7 @@ function render()
     }
 
     //Draw the stickman
-    renderStickman();
+    //renderStickman();
     
 	//Handle rippling effect
 	if(waveRadius < 0.5)
