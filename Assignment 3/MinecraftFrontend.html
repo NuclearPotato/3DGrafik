@@ -6,70 +6,25 @@
 attribute vec4 vPosition;
 attribute vec4 vColor;
 
-uniform vec2 corner1; //a corner of block
-uniform vec2 corner2; //other corner of block
-uniform vec2 clickPos; //Position clicked
-uniform vec4 offset; //current offset of stickman
-uniform float waveLength; //the max size of a wave
-uniform float isSpecial; //which kind of block is this? 2.0 for stickman
-
-varying float isAir;
-varying float waveDist; //the distance the wave has travelled
-varying vec2 centerPos; //Center of block being shaded
 
 varying vec4 fPosition;
 varying vec4 fColor;
 
 void main()
 {
-	vec4 temp = vec4(-1.0,0.0,-1.0,0.0);
+	vec4 temp = vec4(0.0,0.0,0.0,0.0);
 	vec4 vPos = vPosition+temp;
 
 	fColor = vColor;
 	gl_Position = vPos;
 	fPosition = vPos;
 	
-/*
-    fColor = vColor;
-	vec2 vPos; //used to get vec2 from vPosition
-
-	if(isSpecial == 2.0) //working on stickman
-	{
-		vec4 tempPos = vPosition+offset;
-		fPosition = tempPos;
-		vPos = vec2(tempPos[0],tempPos[1]);
-	}
-	else //its not a stickman
-	{
-		vPos = vec2(vPosition[0],vPosition[1]);
-		fPosition = vPosition;
-	}
-
-	centerPos = mix(corner1, corner2, 0.5);
-
-	waveDist = distance(vPos, clickPos);
-
-	if(waveLength > waveDist && waveLength < 0.5)
-	{
-		vPos = mix(clickPos, vPos, 0.95);
-	}
-	else
-	{
-		waveDist = 0.0;
-	}
-	gl_Position = vec4(vPos[0],vPos[1],vPosition[2],vPosition[3]);
-
-	isAir = isSpecial;
-	*/
 }
 </script>
 
 <script id="fragment-shader" type="x-shader/x-fragment">
 
 precision mediump float;
-varying float isAir; //is this block special? is it air?
-varying float waveDist; //distace wave has travelled
-varying vec2 centerPos; //center of block the fragment belongs to
 
 varying vec4 fPosition;
 varying vec4 fColor;
@@ -78,15 +33,6 @@ void main()
 
     gl_FragColor = fColor;
 
-	/*vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
-	float dist = (2.0 * distance( abs(centerPos), abs(fragxy) ));
-
-	if(isAir == 0.0)
-	{
-		gl_FragColor.r = fColor[0] - dist - (waveDist/2.0);
-		gl_FragColor.g = fColor[1] - dist - (waveDist/2.0);
-		gl_FragColor.b = fColor[2] - dist - (waveDist/2.0);
-	}*/
 }
 </script>
 
