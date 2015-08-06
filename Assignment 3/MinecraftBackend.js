@@ -6,9 +6,10 @@ var stickmanArray = [];
 var vBuffer, cBuffer, lBuffer;
 var index = 0;
 var cIndex = 0;
-var worldWidth = 6;
-var worldHeight = 6;
-var worldDepth = 5;
+var iIndices = [];
+var worldWidth = 2;
+var worldHeight = 2;
+var worldDepth = 2;
 var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
 var mousePosition = [];
@@ -51,17 +52,14 @@ var colors = [
 ];
 
 // The block function object
-function block(blockType, v1, v2, v3, v4, appearance)
+function Block(blockType, vecIndices, appearance)
 {
     this.blockType = blockType;
-    this.v1 = v1;
-    this.v2 = v2;
-    this.v3 = v3;
-    this.v4 = v4;
+    this.vecIndices = vecIndices;
     this.appearance = appearance;
 }
 
-window.onload = function init() {
+window.onload = function Init() {
 	// Initialize the canvas and GL context
     canvas = document.getElementById( "gl-canvas" );
 
@@ -74,8 +72,8 @@ window.onload = function init() {
     gl.clear( gl.COLOR_BUFFER_BIT );
 
     // Initialize the coordinate system
-    initializeCoordSystem(worldWidth,worldHeight);
-    initialize3DCoordSystem(worldWidth, worldHeight, worldDepth);
+    //initializeCoordSystem(worldWidth,worldHeight);
+    Initialize3DCoordSystem(worldWidth, worldHeight, worldDepth);
 
     // Load shaders
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
@@ -102,16 +100,19 @@ window.onload = function init() {
 
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, 16*(8*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
+    gl.bufferData(gl.ARRAY_BUFFER, 16*(36*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
-    iBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, 4*(8*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
+    var test = [3,2,1];
 
+    iBuffer = gl.createBuffer();
+    //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+   // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, 4*(36*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
+    //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(test), gl.STATIC_DRAW );
+    //console.log(iBuffer);
     //Handle the buffer with both the border and color
-    handleBuffer();
+    HandleBuffer();
     //handleStickmanBuffer();
 
 
@@ -145,12 +146,12 @@ function initializeCoordSystem(columnSize, rowSize, depthSize)
             var blockType = assignBlockType(i,j);
 			var blockAppearance = assignBlockAppearance(blockType);
 
-            blockArray.push(new block(blockType,v1,v2,v3,v4,blockAppearance));
+            blockArray.push(new Block(blockType,v1,v2,v3,v4,blockAppearance));
         }
     }
 }
 
-function initialize3DCoordSystem(columnSize, rowSize, depthSize)
+function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
 {
     var cWidth = 2; //canvas.width in clip coords;
     var cHeight = 2; //canvas.height in clip coords;
@@ -160,12 +161,30 @@ function initialize3DCoordSystem(columnSize, rowSize, depthSize)
     var yPixels = cHeight/rowSize;
     var zPixels = cDepth/depthSize;
 
-    for (var i = 0 ; i < depthSize ; i++) {
-        for (var j = 0 ; j < rowSize ; j++) {
-            for (var k = 0 ; k < columnSize ; k++) {
-                var vertice = vec3(xPixels*k - 1, yPixels*j - 1, zPixels*i - 1);
+    for (var z = 0 ; z <= depthSize ; z++) {
+        for (var y = 0 ; y <= rowSize ; y++) {
+            for (var x = 0 ; x <= columnSize ; x++) {
+                var vertice = vec3(xPixels*x - 1, yPixels*y - 1, zPixels*z - 1);
                 worldGrid.push(vertice);
-                //console.log(vertice);
+
+                if(z != depthSize && y != rowSize && x != columnSize) {
+                    var newBlock = new Block("Dirt",
+                                             [x + y*(worldWidth+1) + z*(worldWidth+1)*(worldHeight+1),
+                                              x+1 + y*(worldWidth+1) + z*(worldWidth+1)*(worldHeight+1),
+                                              x + (y+1)*(worldWidth+1) + z*(worldWidth+1)*(worldHeight+1),
+                                              x+1 + (y+1)*(worldWidth+1) + z*(worldWidth+1)*(worldHeight+1),
+                                              x + y*(worldWidth+1) + (z+1)*(worldWidth+1)*(worldHeight+1),
+                                              x+1 + y*(worldWidth+1) + (z+1)*(worldWidth+1)*(worldHeight+1),
+                                              x + (y+1)*(worldWidth+1) + (z+1)*(worldWidth+1)*(worldHeight+1),
+                                              x+1 + (y+1)*(worldWidth+1) + (z+1)*(worldWidth+1)*(worldHeight+1)],
+                                             "Solid");1
+
+                    blockArray.push(newBlock);
+                    //console.log(newBlock);
+                }
+
+
+
             }
         }
     }
@@ -174,7 +193,7 @@ function initialize3DCoordSystem(columnSize, rowSize, depthSize)
 //Calculates the clip coords of the vertices of the stickman
 function handleStickmanBuffer()
 {
-    console.log(stickManInitialIndex)
+    console.log(stickManInitialIndex);
     var blockOfLowerBody = blockArray[stickManInitialIndex];
     var blockOfUpperBody = blockArray[stickManInitialIndex+1];
 
@@ -187,44 +206,64 @@ function handleStickmanBuffer()
     var v6 = mix(blockOfUpperBody.v2, blockOfUpperBody.v4, 0.5);
     stickmanArray = [v1, v2, v4, v5, v6];
 
-    var lowerBody = new block("Stickman", v1, v3, v2, v3);
-    var upperBody = new block("Stickman", v4, v3, v5, v6);
+    var lowerBody = new Block("Stickman", v1, v3, v2, v3);
+    var upperBody = new Block("Stickman", v4, v3, v5, v6);
 
     var stickmanIndex = (blockArray.length + 1) * 4;
 
     //Allocates the stickman positions in the buffers
-    allocateToVBuffer(lowerBody, stickmanIndex);
-    allocateToVBuffer(upperBody, stickmanIndex + 4);
+    allocateToBuffer(lowerBody, stickmanIndex);
+    allocateToBuffer(upperBody, stickmanIndex + 4);
     var color = vec4(0.0, 0.0, 0.0, 1.0);
     allocateToCBuffer(color, stickmanIndex + 4);
     allocateToCBuffer(color, stickmanIndex + 8);
 }
 
-function handleBuffer() {
+function HandleBuffer() {
 
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     worldGrid.forEach(function(entry) {
-
+        gl.bufferSubData(gl.ARRAY_BUFFER, 12*index, flatten(entry));
+        index++;
     });
 
+    console.log(blockArray[0].vecIndices);
+    console.log(worldGrid.length);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     blockArray.forEach(function(entry) {
-        allocateToVBuffer(entry, index);
-        index += 4;
-        var blockColor = addColor(entry.blockType); //Assign a color to the block
-        allocateToCBuffer(blockColor, index);
+        //gl.bufferSubData(gl.ARRAY_BUFFER, 16*cIndex, flatten(addColor("x")));
+        for(var i = 0 ; i < 4 ; i++) {
+            cIndex += 3;
+            allocateToCBuffer(AddColor("0"), cIndex);
+            console.log(AddColor("0"));
+        }
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array([2,3,5,2,2,2]), gl.STATIC_DRAW);
+
+        //cIndex++;
+        //entry.vecIndices
     });
 }
 
-function allocateToVBuffer(entry, currentIndex) {
+function handleTriangle(currentIndex, color, start, increase) {
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*currentIndex, flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex+1), flatten(color));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex+2), flatten(color));
+    iIndices.push(entry.vecIndices[start]);
+    iIndices.push(entry.vecIndices[start + increase]);
+    iIndices.push(entry.vecIndices[start + 2*increase]);
+}
+
+function allocateToBuffer(entry, currentIndex) {
     gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*currentIndex, flatten(entry.v1));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+1), flatten(entry.v2));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+2), flatten(entry.v3));
-    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+3), flatten(entry.v4));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*currentIndex, flatten(entry));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+1), flatten(entry));
+    gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+2), flatten(entry));
 }
 
 function allocateToCBuffer(color,currentIndex) {
     gl.bindBuffer( gl.ARRAY_BUFFER, cBuffer);
-    gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-4), flatten(color));
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-3), flatten(color));
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-2), flatten(color));
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-1), flatten(color));
@@ -341,10 +380,10 @@ function render()
         {
             blockIndex = i/4;
 
-            var tempBlock = new block("Border", currentBlock.v1, currentBlock.v2, currentBlock.v4, currentBlock.v3);
+            var tempBlock = new Block("Border", currentBlock.v1, currentBlock.v2, currentBlock.v4, currentBlock.v3);
             var tempIndex = index;
             index = blockArray.length*4;
-            allocateToVBuffer(tempBlock, index);
+            allocateToBuffer(tempBlock, index);
             index += 4;
             var borderColor = vec4(0.0, 0.0, 0.0, 1.0);
             allocateToCBuffer(borderColor, index);
@@ -364,12 +403,12 @@ function render()
             if (bType == chosenBLockType) {
                 blockArray[blockIndex].blockType = "Air";
                 blockArray[blockIndex].appearance = assignBlockAppearance("Air");
-                var newColor = addColor("Air");
+                var newColor = AddColor();
             }
             else {
                 blockArray[blockIndex].blockType = chosenBLockType;
                 blockArray[blockIndex].appearance = assignBlockAppearance(chosenBLockType);
-                var newColor = addColor(chosenBLockType);
+                var newColor = AddColor();
             }
             allocateToCBuffer(newColor, blockIndex*4 + 4);
         }
@@ -449,9 +488,20 @@ function pixel_to_clip(x,y)
 }
 
 //Returns the color of the given blockType
-function addColor(blockType)
-{
-    switch (blockType)
+function AddColor(axis) {
+    switch (axis) {
+        case "0" :
+            return vec4(1.0, 0.0 ,0.0 ,1,0);
+            break;
+        case "1" :
+            return vec4(0.0, 1.0 ,0.0 ,1,0);
+            break;
+        case "2" :
+            return vec4(0.0, 0.0 ,1.0 ,1,0);
+            break;
+
+    }
+    /*switch (blockType)
     {
         case "Air" :
             return colors[0];
@@ -480,7 +530,7 @@ function addColor(blockType)
         case "Stickman" :
             return colors[8];
             break;
-    }
+    }*/
 }
 
 //Assign a blockType to a given spot in the blockArray, depending on
@@ -555,7 +605,7 @@ function checkCollision()
 {
     var priorityNumber = 100;
     var currentCollisionBlock;
-    var finalCollisionBlock = new block("Air");
+    var finalCollisionBlock = new Block("Air");
     //Finds the blocks the vertices is in and check for appearance of these blocks
         stickmanArray.some(function(entry) {
             var tempEntry = [entry[0] + stickManOffset[0], entry[1] + stickManOffset[1]];
@@ -590,13 +640,13 @@ function getCell(vec)
     var blockIndex = xPos + yPos;
     if(blockIndex > blockArray.length)
     if(blockIndex > blockArray.length)
-        return new block("Border",
+        return new Block("Border",
                          2/worldWidth * stickmanStartXBlock - 0.001, //Values of the new stickman position
                          stickManOffset[1],
                          0.0, 0.0, "Border");
 
     if(blockIndex < 0)
-        return new block("Border",
+        return new Block("Border",
                          2/worldWidth * (stickmanStartXBlock - worldWidth + 1) + 0.001, //Values of the new stickman position
                          stickManOffset[1],
                          0.0, 0.0, "Border");
@@ -606,5 +656,4 @@ function getCell(vec)
 function calculatePos(x, y, z) {
     return x + y*worldWidth + z*worldWidth*worldHeight;
 }
-
 
