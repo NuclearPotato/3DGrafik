@@ -22,8 +22,13 @@ varying vec4 fColor;
 
 void main()
 {
+	vec4 temp = vec4(0.0,0.0,-2.0,0.0);
+	vec4 vPos = vPosition+temp;
+
 	fColor = vColor;
-	gl_Position = vPosition;
+	gl_Position = vPos;
+	fPosition = vPos;
+	
 /*
     fColor = vColor;
 	vec2 vPos; //used to get vec2 from vPosition
