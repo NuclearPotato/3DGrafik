@@ -105,8 +105,6 @@ window.onload = function Init() {
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
 
-    var test = [3,2,1];
-
     iBuffer = gl.createBuffer();
     //gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, 4*(36*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
@@ -188,14 +186,12 @@ function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
                                              "Solid");1
 
                     blockArray.push(newBlock);
-                    //console.log(newBlock);
+
                 }
-
-
-
             }
         }
     }
+    console.log(worldGrid);
 }
 
 //Calculates the clip coords of the vertices of the stickman
@@ -241,21 +237,23 @@ function HandleBuffer() {
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     blockArray.forEach(function(entry) {
         //gl.bufferSubData(gl.ARRAY_BUFFER, 16*cIndex, flatten(addColor("x")));
-        handleTriangle(cIndex, AddColor("0"), entry, 0, 1, 1);
+     /*   handleTriangle(cIndex, AddColor("0"), entry, 0, 1, 1);
         handleTriangle(cIndex, AddColor("0"), entry, 1, 1, 1);
         handleTriangle(cIndex, AddColor("0"), entry, 4, 1, 1);
         handleTriangle(cIndex, AddColor("0"), entry, 5, 1, 1);
-
+*/
+        /*
         handleTriangle(cIndex, AddColor("1"), entry, 0, 2, 2);
         handleTriangle(cIndex, AddColor("1"), entry, 2, 2, 2);
         handleTriangle(cIndex, AddColor("1"), entry, 1, 2, 2);
         handleTriangle(cIndex, AddColor("1"), entry, 3, 2, 2);
-
+        */
+/*
         handleTriangle(cIndex, AddColor("2"), entry, 0, 1, 3);
         handleTriangle(cIndex, AddColor("2"), entry, 1, 3, 1);
         handleTriangle(cIndex, AddColor("2"), entry, 2, 1, 3);
         handleTriangle(cIndex, AddColor("2"), entry, 3, 3, 1);
-
+*/
 
     });
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
@@ -336,8 +334,10 @@ function updateWireframe(buffer)
 		wireFrames.push(makeSquare(p1,p2,p3,p4));
 	});
 	
-	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-    gl.bufferData(gl.ARRAY_BUFFER, flatten(wireFrames), gl.STATIC_DRAW );
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(wireFrames), gl.STATIC_DRAW);
+
+    //console.log(wireFrames);
 }
 
 // ********************************************
@@ -429,6 +429,7 @@ function stopStickMan(event)
 function Render()
 {
     gl.drawElements(gl.TRIANGLES, iIndices.length, gl.UNSIGNED_BYTE, 0);
+
     /*
     var blockIndex = 0;
     gl.clear( gl.COLOR_BUFFER_BIT );
