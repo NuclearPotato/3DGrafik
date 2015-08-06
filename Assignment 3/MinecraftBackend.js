@@ -3,7 +3,7 @@ var canvas;
 var gl;
 var blockArray = [];
 var stickmanArray = [];
-var vBuffer, cBuffer, lBuffer;
+var vBuffer, cBuffer, lBuffer, wireBuffer;
 var index = 0;
 var cIndex = 0;
 var iIndices = [];
@@ -20,6 +20,7 @@ var lastKeyPress;
 
 // World grid variables
 var worldGrid = [];
+var wireFrames = [];
 
 // Uniform variable locations
 var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
@@ -111,6 +112,9 @@ window.onload = function Init() {
    // gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, 4*(36*worldWidth*worldHeight*worldDepth), gl.STATIC_DRAW );
     //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(test), gl.STATIC_DRAW );
     //console.log(iBuffer);
+	
+	wireBuffer = gl.createBuffer();
+	
     //Handle the buffer with both the border and color
     HandleBuffer();
     //handleStickmanBuffer();
@@ -267,6 +271,55 @@ function allocateToCBuffer(color,currentIndex) {
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-3), flatten(color));
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-2), flatten(color));
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-1), flatten(color));
+}
+
+function updateWireframe()
+{
+	var p1, p2, p3, p4;
+	blockArray.forEach(entry)
+	{
+		//Front-facing square
+		p1 = entry.vecIndices[0];
+		p2 = entry.vecIndices[1];
+		p3 = entry.vecIndices[3];
+		p4 = entry.vecIndices[2];
+		wireFrames.push(makeSquare(p1,p2,p3,p4));
+		
+		//left-facing square
+		p1 = entry.vecIndices[0];
+		p2 = entry.vecIndices[4];
+		p3 = entry.vecIndices[6];
+		p4 = entry.vecIndices[2];
+		wireFrames.push(makeSquare(p1,p2,p3,p4));
+		
+		//right-facing square
+		p1 = entry.vecIndices[1];
+		p2 = entry.vecIndices[5];
+		p3 = entry.vecIndices[7];
+		p4 = entry.vecIndices[3];
+		wireFrames.push(makeSquare(p1,p2,p3,p4));
+		
+		//back-facing square
+		p1 = entry.vecIndices[5];
+		p2 = entry.vecIndices[4];
+		p3 = entry.vecIndices[6];
+		p4 = entry.vecIndices[7];
+		wireFrames.push(makeSquare(p1,p2,p3,p4));
+		
+		//top-facing square
+		p1 = entry.vecIndices[2];
+		p2 = entry.vecIndices[3];
+		p3 = entry.vecIndices[7];
+		p4 = entry.vecIndices[6];
+		wireFrames.push(makeSquare(p1,p2,p3,p4));
+		
+		//bottom-facing square
+		p1 = entry.vecIndices[0];
+		p2 = entry.vecIndices[1];
+		p3 = entry.vecIndices[5];
+		p4 = entry.vecIndices[4];
+		wireFrames.push(makeSquare(p1,p2,p3,p4));
+	}
 }
 
 // ********************************************
@@ -657,3 +710,10 @@ function calculatePos(x, y, z) {
     return x + y*worldWidth + z*worldWidth*worldHeight;
 }
 
+//Arranges for gl.LINES to draw square
+function makeSquare(p1,p2,p3,p4)
+{
+	var x = [];
+	x.push(p1,p2,p2,p3,p3,p4,p4,p1);
+	return x;
+}
