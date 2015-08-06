@@ -128,7 +128,7 @@ window.onload = function Init() {
     //Adds eventListeners
     //addEvents();
 	
-    //render();
+    Render();
 };
 
 // ********************************************
@@ -241,26 +241,37 @@ function HandleBuffer() {
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     blockArray.forEach(function(entry) {
         //gl.bufferSubData(gl.ARRAY_BUFFER, 16*cIndex, flatten(addColor("x")));
-        for(var i = 0 ; i < 4 ; i++) {
-            cIndex += 3;
-            allocateToCBuffer(AddColor("0"), cIndex);
-            console.log(AddColor("0"));
-        }
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array([2,3,5,2,2,2]), gl.STATIC_DRAW);
+        handleTriangle(cIndex, AddColor("0"), entry, 0, 1, 1);
+        handleTriangle(cIndex, AddColor("0"), entry, 1, 1, 1);
+        handleTriangle(cIndex, AddColor("0"), entry, 4, 1, 1);
+        handleTriangle(cIndex, AddColor("0"), entry, 5, 1, 1);
 
-        //cIndex++;
-        //entry.vecIndices
+        handleTriangle(cIndex, AddColor("1"), entry, 0, 2, 2);
+        handleTriangle(cIndex, AddColor("1"), entry, 2, 2, 2);
+        handleTriangle(cIndex, AddColor("1"), entry, 1, 2, 2);
+        handleTriangle(cIndex, AddColor("1"), entry, 3, 2, 2);
+
+        handleTriangle(cIndex, AddColor("2"), entry, 0, 1, 3);
+        handleTriangle(cIndex, AddColor("2"), entry, 1, 3, 1);
+        handleTriangle(cIndex, AddColor("2"), entry, 2, 1, 3);
+        handleTriangle(cIndex, AddColor("2"), entry, 3, 3, 1);
+
+
     });
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(iIndices), gl.STATIC_DRAW);
+
+    console.log(iIndices);
 }
 
-function handleTriangle(currentIndex, color, start, increase) {
+function handleTriangle(currentIndex, color, block, start, firstIncrease, secondIncrease) {
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*currentIndex, flatten(color));
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex+1), flatten(color));
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex+2), flatten(color));
-    iIndices.push(entry.vecIndices[start]);
-    iIndices.push(entry.vecIndices[start + increase]);
-    iIndices.push(entry.vecIndices[start + 2*increase]);
+    cIndex += 3;
+    iIndices.push(block.vecIndices[start]);
+    iIndices.push(block.vecIndices[start + firstIncrease]);
+    iIndices.push(block.vecIndices[start + firstIncrease + secondIncrease]);
 }
 
 function allocateToBuffer(entry, currentIndex) {
@@ -415,8 +426,10 @@ function stopStickMan(event)
 // ********************************************
 // Rendering
 // ********************************************
-function render()
+function Render()
 {
+    gl.drawElements(gl.TRIANGLES, iIndices.length, gl.UNSIGNED_BYTE, 0);
+    /*
     var blockIndex = 0;
     gl.clear( gl.COLOR_BUFFER_BIT );
     for(var i = 0; i<index; i+=4)
@@ -485,8 +498,8 @@ function render()
 		gl.uniform1f(waveLength,waveRadius);
 	}
 
-    changeBlock = false;
-    window.requestAnimFrame(render);
+    changeBlock = false;*/
+    window.requestAnimFrame(Render);
 }
 
 function renderStickman()

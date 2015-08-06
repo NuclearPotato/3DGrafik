@@ -22,9 +22,12 @@ varying vec4 fColor;
 
 void main()
 {
+	fColor = vColor;
+	gl_Position = vPosition;
+/*
     fColor = vColor;
 	vec2 vPos; //used to get vec2 from vPosition
-	
+
 	if(isSpecial == 2.0) //working on stickman
 	{
 		vec4 tempPos = vPosition+offset;
@@ -36,11 +39,11 @@ void main()
 		vPos = vec2(vPosition[0],vPosition[1]);
 		fPosition = vPosition;
 	}
-	
+
 	centerPos = mix(corner1, corner2, 0.5);
-	
+
 	waveDist = distance(vPos, clickPos);
-	
+
 	if(waveLength > waveDist && waveLength < 0.5)
 	{
 		vPos = mix(clickPos, vPos, 0.95);
@@ -50,8 +53,9 @@ void main()
 		waveDist = 0.0;
 	}
 	gl_Position = vec4(vPos[0],vPos[1],vPosition[2],vPosition[3]);
-	
+
 	isAir = isSpecial;
+	*/
 }
 </script>
 
@@ -68,16 +72,16 @@ void main()
 {
 
     gl_FragColor = fColor;
-	
-	vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
+
+	/*vec2 fragxy = abs(vec2(fPosition[0],fPosition[1]));
 	float dist = (2.0 * distance( abs(centerPos), abs(fragxy) ));
-	
+
 	if(isAir == 0.0)
 	{
 		gl_FragColor.r = fColor[0] - dist - (waveDist/2.0);
 		gl_FragColor.g = fColor[1] - dist - (waveDist/2.0);
 		gl_FragColor.b = fColor[2] - dist - (waveDist/2.0);
-	}
+	}*/
 }
 </script>
 
