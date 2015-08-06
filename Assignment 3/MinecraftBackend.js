@@ -113,10 +113,14 @@ window.onload = function Init() {
     //gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(test), gl.STATIC_DRAW );
     //console.log(iBuffer);
 	
-	wireBuffer = gl.createBuffer();
 	
     //Handle the buffer with both the border and color
     HandleBuffer();
+	
+	//Initialize wireframe
+	wireBuffer = gl.createBuffer();
+	updateWireframe(wireBuffer);
+	
     //handleStickmanBuffer();
 
 
@@ -273,10 +277,10 @@ function allocateToCBuffer(color,currentIndex) {
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*(currentIndex-1), flatten(color));
 }
 
-function updateWireframe()
+function updateWireframe(buffer)
 {
 	var p1, p2, p3, p4;
-	blockArray.forEach(entry)
+	blockArray.forEach(function(entry)
 	{
 		//Front-facing square
 		p1 = entry.vecIndices[0];
@@ -319,7 +323,10 @@ function updateWireframe()
 		p3 = entry.vecIndices[5];
 		p4 = entry.vecIndices[4];
 		wireFrames.push(makeSquare(p1,p2,p3,p4));
-	}
+	});
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(wireFrames), gl.STATIC_DRAW );
 }
 
 // ********************************************
