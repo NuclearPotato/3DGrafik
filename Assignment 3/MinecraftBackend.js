@@ -143,7 +143,13 @@ window.onload = function Init() {
 	sBR = mult(sBR, rotate(45.0, vec3(1.0, 0.0, 0.0)));
 	sBR = mult(sBR, rotate(45.0, vec3(0.0, 0.0, 1.0)));
 	sBR = mult(sBR, scalem(0.25,0.25,0.25));
-	
+
+    mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
+    mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
+    mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
+    mvMatrix = mult(mvMatrix, rotate(-theta[2], [0.0, 0.0, 1.0]));
+    mvMatrix.matrix = false;
+
     //Adds eventListeners
     AddEvents();
 
@@ -287,6 +293,13 @@ function AddEvents()
             newMousePosition = vec2(event.clientX, event.clientY);
             theta = [theta[0] + prevMousePosition[1] - newMousePosition[1], theta[1] + prevMousePosition[0] - newMousePosition[0], theta[2] + 0];
 			prevMousePosition = newMousePosition;
+
+            mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
+            mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
+            mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
+            mvMatrix = mult(mvMatrix, rotate(-theta[2], [0.0, 0.0, 1.0]));
+            mvMatrix.matrix = false;
+
         }
     });
 
@@ -353,10 +366,7 @@ function Render()
                -4.0*Math.sin(t)*Math.sin(p),
                -4.0*Math.cos(t));
 
-    mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
-    mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
-    mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
-    mvMatrix.matrix = false;
+
 
     projectionMatrix = perspective(fovy, aspect, near, far);
 

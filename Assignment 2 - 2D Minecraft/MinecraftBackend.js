@@ -3,7 +3,8 @@ var canvas;
 var gl;
 var blockArray = [];
 var stickmanArray = [];
-var vBuffer, cBuffer, lBuffer;
+var indices = []
+var vBuffer, cBuffer, iBuffer, wfBuffer;
 var index = 0;
 var cIndex = 0;
 var worldWidth = 40;
@@ -15,6 +16,7 @@ var program;
 var changeBlock = false;
 var chosenBLockType = "Air";
 var lastKeyPress;
+var vPosition;
 
 // Uniform variable locations
 var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset;
@@ -73,9 +75,13 @@ window.onload = function init() {
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, 8*((blockArray.length+1)*4 + 8), gl.STATIC_DRAW);
 
-    var vPosition = gl.getAttribLocation( program, "vPosition");
+    vPosition = gl.getAttribLocation( program, "vPosition");
     gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
+
+    iBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(indices), gl.STATIC_DRAW);
 
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
@@ -84,6 +90,10 @@ window.onload = function init() {
     var vColor = gl.getAttribLocation( program, "vColor");
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
+
+    wfBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, wfBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, 8*4, gl.STATIC_DRAW);
 
 
     //Handle the buffer with both the border and color
@@ -199,7 +209,7 @@ function render()
 		else
 			gl.uniform1f(isSpecial,0.0);
 
-        gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
+        //gl.drawArrays(gl.TRIANGLE_STRIP, i, 4);
 
         //Reallocate to the buffer, where to render a border around the box, which the mouse is over
         if (mousePosition[0] >= currentBlock.v1[0] && mousePosition[1] >= currentBlock.v1[1]
@@ -210,13 +220,16 @@ function render()
             var tempBlock = new block("Border", currentBlock.v1, currentBlock.v2, currentBlock.v4, currentBlock.v3);
             var tempIndex = index;
             index = blockArray.length*4;
-            allocateToVBuffer(tempBlock, index);
+            allocateToBuffer(tempBlock, index, vBuffer);
+            allocateToBuffer(tempBlock, 0, wfBuffer);
             index += 4;
             var borderColor = vec4(0.0, 0.0, 0.0, 1.0);
             allocateToCBuffer(borderColor, index);
             index = tempIndex;
         }
     }
+
+    gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_BYTE, 0);
 
     //Checks if it is possible to build a block
     if (checkBlockTypesAround(blockIndex))
@@ -239,7 +252,15 @@ function render()
             }
             allocateToCBuffer(newColor, blockIndex*4 + 4);
         }
-        gl.drawArrays(gl.LINE_LOOP, blockArray.length*4, 4);
+        gl.bindBuffer(gl.ARRAY_BUFFER, wfBuffer);
+        gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+
+        //gl.drawArrays(gl.LINE_LOOP, blockArray.length*4, 4);
+        gl.drawArrays(gl.LINE_LOOP, 0, 4);
+        gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+        gl.vertexAttribPointer(vPosition, 2, gl.FLOAT, false, 0, 0);
+
+
     }
 
     //Draw the stickman
@@ -387,8 +408,8 @@ function handleStickmanBuffer()
     var stickmanIndex = (blockArray.length + 1) * 4;
 
     //Allocates the stickman positions in the buffers
-    allocateToVBuffer(lowerBody, stickmanIndex);
-    allocateToVBuffer(upperBody, stickmanIndex + 4);
+    allocateToBuffer(lowerBody, stickmanIndex, vBuffer);
+    allocateToBuffer(upperBody, stickmanIndex + 4, vBuffer);
     var color = vec4(0.0, 0.0, 0.0, 1.0);
     allocateToCBuffer(color, stickmanIndex + 4);
     allocateToCBuffer(color, stickmanIndex + 8);
@@ -397,15 +418,26 @@ function handleStickmanBuffer()
 function handleBuffer()
 {
     blockArray.forEach(function(entry) {
-        allocateToVBuffer(entry, index);
+        allocateToBuffer(entry, index, vBuffer);
+
+        indices.push(index);
+        indices.push(index+1);
+        indices.push(index+1);
+        indices.push(index+1);
+        indices.push(index+1);
+        indices.push(index+1);
+
         index += 4;
         var blockColor = addColor(entry.blockType); //Assign a color to the block
         allocateToCBuffer(blockColor, index);
+
+
     });
+    //console.log(indices);
 }
 
-function allocateToVBuffer(entry, currentIndex) {
-    gl.bindBuffer( gl.ARRAY_BUFFER, vBuffer);
+function allocateToBuffer(entry, currentIndex, buffer) {
+    gl.bindBuffer( gl.ARRAY_BUFFER, buffer);
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*currentIndex, flatten(entry.v1));
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+1), flatten(entry.v2));
     gl.bufferSubData(gl.ARRAY_BUFFER, 8*(currentIndex+2), flatten(entry.v3));
