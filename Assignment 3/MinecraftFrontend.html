@@ -6,19 +6,43 @@
 attribute vec4 vPosition;
 attribute vec4 vColor;
 
-
-varying vec4 fPosition;
 varying vec4 fColor;
+
+uniform vec3 theta;
+uniform mat4 projectionMatrix;
 
 void main()
 {
-	vec4 temp = vec4(0.0,0.0,0.0,0.0);
-	vec4 vPos = vPosition+temp;
+	//Compute the sin and cos for theta, for each of the three axes.
+	vec3 angles = radians(theta);
+	vec3 c = cos(angles);
+	vec3 s = sin(angles);
+
+	//the rotation matrices
+	mat4 rx = mat4(1.0,  0.0,  0.0,  0.0,
+	               0.0,  c.x,  s.x,  0.0,
+	               0.0, -s.x,  c.x,  0.0,
+	               0.0,  0.0,  0.0,  1.0);
+
+	mat4 ry = mat4(c.y,  0.0, -s.y,  0.0,
+	               0.0,  1.0,  0.0,  0.0,
+	               s.y,  0.0,  c.y,  0.0,
+	               0.0,  0.0,  0.0,  1.0);
+
+	mat4 rz = mat4(c.z, -s.z,  0.0,  0.0,
+	               s.z,  c.z,  0.0,  0.0,
+	               0.0,  0.0,  1.0,  0.0,
+	               0.0,  0.0,  0.0,  1.0);
+
+	mat4 po = mat4(1.0,  0.0,  0.0,  0.0,
+	               0.0,  1.0,  0.0,  0.0,
+	               0.0,  0.0,  1.0,  -3.0,
+	               0.0,  0.0,  0.0,  1.0);
+
+	vec4 temp = vec4(0.0, 0.0, 0.0, 0.0);
 
 	fColor = vColor;
-	gl_Position = vPos;
-	fPosition = vPos;
-	
+	gl_Position = vPosition * rz * ry * rx * po * projectionMatrix;
 }
 </script>
 
@@ -26,7 +50,6 @@ void main()
 
 precision mediump float;
 
-varying vec4 fPosition;
 varying vec4 fColor;
 void main()
 {
@@ -68,6 +91,8 @@ void main()
 				<td><input id="leftButton" type="button" value="Left(A)"></td>
 				<td><input id="downButton" type="button" value="Down(S)"></td>
 				<td><input id="rightButton" type="button" value="Right(D)"></td>
+				<td><input id="removeBlock" type="button" value="RemoveBlock"></td>
+				<td><input id="addBlock" type="button" value="AddBlock"></td>
 			</tr>
 		</table>
 	</div>
