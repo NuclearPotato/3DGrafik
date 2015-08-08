@@ -33,10 +33,18 @@ var sIndices = [];
 var swIndices = [];
 
 // View variables
-var fovy = 60.0;
+var fovy = 45.0;
 var aspect = 1;
 var near = 0.5;
 var far = 5.0;
+var colorArray = [];
+var pointArray = [];
+var eye;
+const at = vec3(0.0, 0.0, 0.0);
+const up = vec3(0.0, 1.0, 0.0);
+var p = 0.0;
+var t = 0.0;
+var dr = 5.0 * Math.PI/180.0;
 
 // Shader related variables
 var theta =  [-35, 45, 0];
@@ -45,6 +53,8 @@ var sBR;
 
 // Uniform variable locations
 var thetaLoc, projectionMatrix, sBRotationMatrix;
+var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset, thetaLoc, modelViewLoc, mvMatrix, projectionMatrix, projectionLoc;
+var theta =  [-35, 45, 0];
 
 // Shader attributes locations
 var vPosition, vColor;
@@ -99,6 +109,7 @@ window.onload = function Init() {
     thetaLoc = gl.getUniformLocation(program,"theta");
     projectionLoc = gl.getUniformLocation(program, "projectionMatrix");
     sBRotationMatrix = gl.getUniformLocation(program, "sBRotationMatrix");
+    modelViewLoc = gl.getUniformLocation(program, "modelView");
 
     // Attribute resource locations
 	vPosition = gl.getAttribLocation( program, "vPosition");
@@ -297,6 +308,22 @@ function AddEvents()
         if (event.target.id == "addBlock")
             addBlock = true;
     });
+
+    iP.addEventListener("keydown", function(event) {
+        console.log(event.keyCode);
+        if (event.keyCode == "68") {
+            t += dr
+        }
+        if (event.keyCode == "65") {
+            t -= dr
+        }
+        if (event.keyCode == "87") {
+            p += dr
+        }
+        if (event.keyCode == "83") {
+            p -= dr
+        }
+    });
 }
 
 // ********************************************
@@ -324,9 +351,26 @@ function Render()
         console.log(iIndices.length);
     }
 
+    eye = vec3(-4.0*Math.sin(t)*Math.cos(p),
+               -4.0*Math.sin(t)*Math.sin(p),
+               -4.0*Math.cos(t));
+
+    mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
+    mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
+    mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
+    mvMatrix.matrix = false;
+
     projectionMatrix = perspective(fovy, aspect, near, far);
+
+
+
+    //mvMatrix = mult(mvMatrix, rotate(45, [1.0, 0.0, 0.0]));
+    //console.log(flatten(mvMatrix));
+
+    gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
 	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
+    //gl.uniform3fv(thetaLoc, theta);
     gl.uniform3fv(thetaLoc, theta);
 	
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(scalem(1.0,1.0,1.0)));
@@ -335,7 +379,7 @@ function Render()
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
 
 	//Render boxes
-    //gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
+    gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
 
 	//Render wireframes
     gl.drawElements(gl.LINES, 24*numberOfActiveBlocks, gl.UNSIGNED_SHORT, 2*(iIndices.length - 24*numberOfActiveBlocks));
