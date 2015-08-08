@@ -16,7 +16,7 @@ uniform mat4 modelView;
 void main()
 {
 	fColor = vColor;
-	gl_Position = vPosition * modelView * projectionMatrix;
+	gl_Position = vPosition * sBRotationMatrix * modelView * projectionMatrix;
 
 	//modelView * po
 }

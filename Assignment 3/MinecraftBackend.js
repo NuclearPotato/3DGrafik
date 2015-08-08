@@ -1,10 +1,6 @@
 
 var canvas;
 var gl;
-var worldWidth = 10;
-var worldHeight = 10;
-var worldDepth = 10;
-var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 var numberOfActiveBlocks = 0;
 var newMousePosition = [];
 var prevMousePosition = [];
@@ -15,9 +11,12 @@ var mousePressed = false;
 
 // World grid variables
 var worldGrid = [];
-
 var groundLevel = worldHeight/2;
 var waterLevel = worldWidth/1.4;
+var worldWidth = 10;
+var worldHeight = 10;
+var worldDepth = 10;
+var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 
 // Buffer arrays
 var blockArray = [];
@@ -52,8 +51,7 @@ var projectionLoc, modelView;
 var sBR;
 
 // Uniform variable locations
-var thetaLoc, projectionMatrix, sBRotationMatrix;
-var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset, thetaLoc, modelViewLoc, mvMatrix, projectionMatrix, projectionLoc;
+var thetaLoc, modelViewLoc, mvMatrix, projectionMatrix, projectionLoc , sBRotationMatrix;
 var theta =  [-35, 45, 0];
 
 // Shader attributes locations
