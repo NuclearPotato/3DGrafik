@@ -3,6 +3,7 @@ var canvas;
 var gl;
 var blockArray = [];
 var blocksPositionsInBuffer = [];
+var removedBlocks = [];
 var stickmanArray = [];
 var vBuffer, cBuffer, lBuffer, wireBuffer;
 var index = 0;
@@ -487,7 +488,7 @@ function AddEvents()
     var iP = document.getElementById("inputPanel");
 
     bP.addEventListener("mousedown", function(event) {
-        prevMousePosition = vec2(event.x, event.y);
+        prevMousePosition = vec2(event.clientX, event.clientY);
         //PixelToClip(event.clientX, event.clientY);
         //console.log(prevMousePosition);
         mousePressed = true;
@@ -500,11 +501,10 @@ function AddEvents()
     bP.addEventListener("mousemove", function(event) {
         //Converting from window coordinates to clip coordinates
         if (mousePressed) {
-            newMousePosition = vec2(event.x, event.y);
+            newMousePosition = vec2(event.clientX, event.clientY);
             //console.log(newMousePosition);
-
             theta = [theta[0] + prevMousePosition[1] - newMousePosition[1], theta[1] + prevMousePosition[0] - newMousePosition[0], theta[2] + 0];
-            prevMousePosition = newMousePosition;
+			prevMousePosition = newMousePosition;
         }
     });
 
@@ -745,9 +745,12 @@ function removeSelectedBlock(blockNumber) {
 
     blocksPositionsInBuffer.splice(blockPos,1);
 
-    iIndices.splice(wireframeStartIndex, 24); // Deleting wireframe points
-    iIndices.splice(pointStartIndex, 36); // Deleting block points
+    var removedWireframe = iIndices.splice(wireframeStartIndex, 24); // Deleting wireframe points
+    var removedBlock = iIndices.splice(pointStartIndex, 36); // Deleting block points
 
+	removedBlocks.push(removedWireframe);
+	removedBlocks.push(removedBlock);
+	
     numberOfActiveBlocks--;
 
     //console.log(blocksPositionsInBuffer);
