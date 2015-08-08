@@ -1,38 +1,46 @@
 
 var canvas;
 var gl;
-var blockArray = [];
-var blocksPositionsInBuffer = [];
-var removedBlocks = []
-var vBuffer, cBuffer;
-var iIndex = 0;
-var iIndices = [];
 var worldWidth = 10;
 var worldHeight = 10;
 var worldDepth = 10;
 var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 var numberOfActiveBlocks = 0;
-var groundLevel = worldHeight/2;
-var waterLevel = worldWidth/1.4;
 var newMousePosition = [];
 var prevMousePosition = [];
 var program;
 var deleteBlock = false;
 var addBlock = false;
 var mousePressed = false;
-var fovy = 60.0;
-var aspect = 1;
-var near = 0.5;
-var far = 5.0;
-var colorArray = [];
-var pointArray = [];
 
 // World grid variables
 var worldGrid = [];
 
-// Uniform variable locations
-var firstCorner, secondCorner, clickPos, waveLength, isSpecial, offset, thetaLoc, modelView, projectionMatrix, projectionLoc;
+var groundLevel = worldHeight/2;
+var waterLevel = worldWidth/1.4;
+
+// Buffer arrays
+var blockArray = [];
+var blocksPositionsInBuffer = [];
+var removedBlocks = [];
+var vBuffer, cBuffer, iBuffer, sBuffer;
+var iIndex = 0;
+var iIndices = [];
+var colorArray = [];
+var pointArray = [];
+
+// View variables
+var fovy = 60.0;
+var aspect = 1;
+var near = 0.5;
+var far = 5.0;
+
+// Shader related variables
 var theta =  [-35, 45, 0];
+var projectionLoc, modelView;
+
+// Uniform variable locations
+var thetaLoc, projectionMatrix;
 
 // Shader attributes locations
 var vPosition, vColor;
@@ -84,12 +92,6 @@ window.onload = function Init() {
     gl.useProgram( program );
 
 	// Uniform resource locations
-    firstCorner = gl.getUniformLocation(program,"corner1");
-    secondCorner = gl.getUniformLocation(program,"corner2");
-    clickPos = gl.getUniformLocation(program,"clickPos");
-    waveLength = gl.getUniformLocation(program,"waveLength");
-    isSpecial = gl.getUniformLocation(program,"isSpecial"); //1.0 air, 2.0 stickman
-    offset = gl.getUniformLocation(program,"offset");
     thetaLoc = gl.getUniformLocation(program,"theta");
     projectionLoc = gl.getUniformLocation(program, "projectionMatrix");
 
@@ -113,6 +115,11 @@ window.onload = function Init() {
     iBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(iIndices), gl.STATIC_DRAW);
+
+	//Buffer for small block indices
+	sBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(), gl.STATIC_DRAW);
 
     //Adds eventListeners
     AddEvents();
@@ -316,7 +323,24 @@ function Render()
 	//Render wireframes
     gl.drawElements(gl.LINES, 24*numberOfActiveBlocks, gl.UNSIGNED_SHORT, 2*(iIndices.length - 24*numberOfActiveBlocks));
 
+	//Render small blocks
+	//renderSmallBlocks();
+	
     window.requestAnimFrame(Render);
+}
+
+//Renders the small blocks that appear after removing a box
+function renderSmallBlocks()
+{
+	gl.bindBuffer();
+	
+	//Render boxes
+    gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
+
+	//Render wireframes
+    gl.drawElements(gl.LINES, 24*numberOfActiveBlocks, gl.UNSIGNED_SHORT, 2*(iIndices.length - 24*numberOfActiveBlocks));
+
+	
 }
 
 function removeSelectedBlock(blockNumber) {
