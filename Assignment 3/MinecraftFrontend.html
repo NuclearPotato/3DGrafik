@@ -10,6 +10,7 @@ varying vec4 fColor;
 
 uniform vec3 theta;
 uniform mat4 projectionMatrix;
+uniform mat4 sBRotationMatrix;
 
 void main()
 {
@@ -42,7 +43,7 @@ void main()
 	vec4 temp = vec4(0.0, 0.0, 0.0, 0.0);
 
 	fColor = vColor;
-	gl_Position = vPosition * rz * ry * rx * po * projectionMatrix;
+	gl_Position = vPosition * sBRotationMatrix * rz * ry * rx * po * projectionMatrix;
 }
 </script>
 

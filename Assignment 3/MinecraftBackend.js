@@ -22,12 +22,15 @@ var waterLevel = worldWidth/1.4;
 // Buffer arrays
 var blockArray = [];
 var blocksPositionsInBuffer = [];
-var removedBlocks = [];
-var vBuffer, cBuffer, iBuffer, sBuffer;
+var vBuffer, cBuffer, iBuffer, sBuffer, swBuffer;
 var iIndex = 0;
 var iIndices = [];
 var colorArray = [];
 var pointArray = [];
+
+var removedBlocks = [];
+var sIndices = [];
+var swIndices = [];
 
 // View variables
 var fovy = 60.0;
@@ -38,9 +41,10 @@ var far = 5.0;
 // Shader related variables
 var theta =  [-35, 45, 0];
 var projectionLoc, modelView;
+var sBR;
 
 // Uniform variable locations
-var thetaLoc, projectionMatrix;
+var thetaLoc, projectionMatrix, sBRotationMatrix;
 
 // Shader attributes locations
 var vPosition, vColor;
@@ -94,6 +98,7 @@ window.onload = function Init() {
 	// Uniform resource locations
     thetaLoc = gl.getUniformLocation(program,"theta");
     projectionLoc = gl.getUniformLocation(program, "projectionMatrix");
+    sBRotationMatrix = gl.getUniformLocation(program, "sBRotationMatrix");
 
     // Attribute resource locations
 	vPosition = gl.getAttribLocation( program, "vPosition");
@@ -121,6 +126,15 @@ window.onload = function Init() {
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(), gl.STATIC_DRAW);
 
+	swBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(), gl.STATIC_DRAW);
+
+	sBR = mat4();
+	sBR = mult(sBR, rotate(45.0, vec3(1.0, 0.0, 0.0)));
+	sBR = mult(sBR, rotate(45.0, vec3(0.0, 0.0, 1.0)));
+	sBR = mult(sBR, scalem(0.25,0.25,0.25));
+	
     //Adds eventListeners
     AddEvents();
 
@@ -311,20 +325,23 @@ function Render()
     }
 
     projectionMatrix = perspective(fovy, aspect, near, far);
-
+	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
     gl.uniform3fv(thetaLoc, theta);
+	
+	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(scalem(1.0,1.0,1.0)));
+	
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
 
 	//Render boxes
-    gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
+    //gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
 
 	//Render wireframes
     gl.drawElements(gl.LINES, 24*numberOfActiveBlocks, gl.UNSIGNED_SHORT, 2*(iIndices.length - 24*numberOfActiveBlocks));
 
 	//Render small blocks
-	//renderSmallBlocks();
+	renderSmallBlocks();
 	
     window.requestAnimFrame(Render);
 }
@@ -332,13 +349,16 @@ function Render()
 //Renders the small blocks that appear after removing a box
 function renderSmallBlocks()
 {
-	gl.bindBuffer();
+	sBR = mult(sBR, rotate(0.5, vec3(0.0,1.0,0.0)));
+	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(sBR));
 	
 	//Render boxes
-    gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
+    gl.drawElements(gl.TRIANGLES, 36*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
 
 	//Render wireframes
-    gl.drawElements(gl.LINES, 24*numberOfActiveBlocks, gl.UNSIGNED_SHORT, 2*(iIndices.length - 24*numberOfActiveBlocks));
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, swBuffer);
+    gl.drawElements(gl.LINES, 24*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
 
 	
 }
@@ -354,13 +374,20 @@ function removeSelectedBlock(blockNumber) {
     var removedWireframe = iIndices.splice(wireframeStartIndex, 24); // Deleting wireframe points
     var removedBlock = iIndices.splice(pointStartIndex, 36); // Deleting block points
 
-	removedBlocks.push(removedWireframe);
-	removedBlocks.push(removedBlock);
+	removedBlocks.push(blockNumber);
+	sIndices = sIndices.concat(removedBlock);
+	swIndices = swIndices.concat(removedWireframe);
 	
     numberOfActiveBlocks--;
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(iIndices), gl.STATIC_DRAW);
+	
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(sIndices), gl.STATIC_DRAW);
+	
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, swBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(swIndices), gl.STATIC_DRAW);
 }
 
 function addSelectedBlock(blockNumber) {
