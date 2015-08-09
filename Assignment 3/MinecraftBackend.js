@@ -39,9 +39,16 @@ var near = 0.5;
 var far = 5.0;
 var colorArray = [];
 var pointArray = [];
-var eye;
-const at = vec3(0.0, 0.0, 0.0);
+
+var mapView;
+
+var mvMatrix;
+var rotMatrix; //Rotate the point we look at
+
+var eye = vec3(0.0,1.2,-0.5);
+var at = vec3(0.0,0.0,2.0);
 const up = vec3(0.0, 1.0, 0.0);
+
 var p = 0.0;
 var t = 0.0;
 var dr = 5.0 * Math.PI/180.0;
@@ -52,7 +59,7 @@ var projectionLoc, modelView;
 var sBR;
 
 // Uniform variable locations
-var thetaLoc, modelViewLoc, mvMatrix, projectionMatrix, projectionLoc , sBRotationMatrix;
+var thetaLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix;
 var theta =  [-35, 45, 0];
 
 // Shader attributes locations
@@ -153,11 +160,11 @@ window.onload = function Init() {
 	sBR = mult(sBR, rotate(45.0, vec3(0.0, 0.0, 1.0)));
 	sBR = mult(sBR, scalem(0.25,0.25,0.25));
 
-    mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
-    mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
-    mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
-    mvMatrix = mult(mvMatrix, rotate(-theta[2], [0.0, 0.0, 1.0]));
-    mvMatrix.matrix = false;
+    //mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
+    //mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
+    //mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
+    //mvMatrix = mult(mvMatrix, rotate(-theta[2], [0.0, 0.0, 1.0]));
+    //mvMatrix.matrix = false;
 
     //Adds eventListeners
     AddEvents();
@@ -320,13 +327,15 @@ function AddEvents()
             newMousePosition = vec2(event.clientX, event.clientY);
             theta = [theta[0] + prevMousePosition[1] - newMousePosition[1], theta[1] + prevMousePosition[0] - newMousePosition[0], theta[2] + 0];
 			prevMousePosition = newMousePosition;
-
-            mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
-            mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
-            mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
-            mvMatrix = mult(mvMatrix, rotate(-theta[2], [0.0, 0.0, 1.0]));
-            mvMatrix.matrix = false;
-
+			
+            //rotMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
+			var rMat = mat4();
+            rMat = mult(rMat, rotate(theta[0], [1.0, 0.0, 0.0])); //rotate X
+            rMat = mult(rMat, rotate(theta[1], [0.0, 1.0, 0.0])); //rotate Y
+            rMat = mult(rMat, rotate(theta[2], [0.0, 0.0, 1.0])); //rotate Z
+			at = subtract(at, eye);
+			// multiply at with rMat;
+			at = add(at, eye);
         }
     });
 
@@ -361,6 +370,10 @@ function AddEvents()
         if (event.keyCode == "83") {
             p -= dr
         }
+		if (event.keyCode == "9" || event.keyCode == "77")
+		{
+			mapView = !mapView;
+		}
     });
 }
 
@@ -389,16 +402,28 @@ function Render()
         console.log(iIndices.length);
     }
 
-    eye = vec3(-4.0*Math.sin(t)*Math.cos(p),
-               -4.0*Math.sin(t)*Math.sin(p),
-               -4.0*Math.cos(t));
-
+	if(mapView)
+	{
+		var mapEye = vec3(0.0,2.0,0.0);
+		//up = vec3(0.0,1.0,0.0);
+		var mapAt = vec3(0.0, 0.0, 0.0);
+		
+		mvMatrix = lookAt(mapEye,mapAt,up);
+	}
+	else
+	{
+		//eye = vec3(-4.0*Math.sin(t)*Math.cos(p), -4.0*Math.sin(t)*Math.sin(p), -4.0*Math.cos(t));
+		//up = vec3(0.0,1.0,0.0);
+		//at = vec3(0.0, 0.0, 0.0);
+		
+		mvMatrix = lookAt(eye,at,up);
+	}
 
 
     projectionMatrix = perspective(fovy, aspect, near, far);
 
 
-
+	//mvMatrix = lookAt(eye,at,up);
     //mvMatrix = mult(mvMatrix, rotate(45, [1.0, 0.0, 0.0]));
     //console.log(flatten(mvMatrix));
 
