@@ -3,18 +3,57 @@
 % NAMES AND STUDENT NRS GO HERE GUYS
 Rasmus Mosbech Jensen - 20105109
 
-Sune D\o ssing - 20115515 
-
 Lars Christensen - 20115025
 
-% An	overview	of	your	code	(files,	structure	and	responsibiliAes)	
+Sune D\o ssing - 20115515 
 
-% Which	buffers	do	you	have	(and	why)	
+% An overview of your code (files, structures and responsibilities)
 
-% Which	drawcalls	do	you	have	(and	why)	
+Our code is split up into parameters in the 
+top, initialization, eventlisteners, rendering and helper functions.
 
-% Which	shaders	do	you	have	(and	why?)	
+Our world is filled with dirt-blocks from -1,-1,-1 to 1,1,1.
+The starting view is placed ontop of the blocks.
+We first render blocks, then block wireframes, then small-blocks, and then small-block-wireframes.
 
-% Which	parameters	are	transferred	between	javascript,	vertex	and	fragment shaders	(and	why?)	
+% Which buffer do you have (and why)
 
-% Is	you	soluAon	the	optimal	one,	or	are	there	alternatives?	
+vBuffer for vertice positions, cBuffer for colors (one for each vertex).
+iBuffer is a buffer of indices for drawing ordinary blocks and wireframe indices afterwards.
+sBuffer is a buffer of indices for drawing small rotating blocks.
+swBuffer is a buffer of indices for drawing wireframes around small rotating blocks.
+Index buffers are used for drawing with drawElements
+
+Finally, we have one cPosition buffer, 
+that gives each vertex the position of the center of its parent-block, 
+which allows small-blocks-vertices to be scaled and rotated around their block center.
+
+% Which drawcalls do you have (and why?)
+
+We use one drawElements call for blocks, for block-wireframes, for small blocks and for small-block-wireframes.
+
+% Which shaders do you have (and why?)
+
+We have one vertex shader and one fragment shader. Our fragment shader has no special behavior.
+Our vertex shader applies modelview and projection matrixes, and also does scaling and rotations for small-blocks.
+
+% Wich parameters are transferred between javascript, vertex and fragment shaders (and why?)
+
+We have a projection matrix, a modelview matrix and a small-block rotation matrix, which are sent as uniform variables.
+The modelview matrix defines the direction and origin of the view, while the projectil matrix defines what kind of view it is.
+
+The small-block rotation matrix is used to achieve the rotating effect for small-blocks, 
+the matrix is prepared on the CPU side, and is changed to a new rotation each rendering.
+It is set to a standard mat4() while drawing ordinary blocks, to avoid rotating or scaling those.
+
+% Is you solution the optimal one, or are there alternatives
+Currently, because we have only one vertex shader, we move every vertex back to 0,0,0, and apply the small block rotating matrix to them.
+If we used two shaders, we could avoid having to move vertexes to 0,0,0, if they dont need to rotated as small-blocks do.
+
+Our solution uses 8 vertices for every block, even if those blocks share corners with other blocks.
+The idea of using drawElements is that each vertex only appears once, 
+and can be refered to multiple times using indices.
+However, because the color buffer is matched to the vertex buffer, 
+we ended up having multiple vertices for the same point, 
+to have different colored faces and black for wireframe.
+It would have been more efficient if we could somehow have used one color per indice instead of vertex.
