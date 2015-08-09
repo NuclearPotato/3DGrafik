@@ -321,8 +321,8 @@ function AddEvents()
 			
             //rotMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
 			var rMat = mat4();
-            rMat = mult(rMat, rotate(10*radX, [1.0, 0.0, 0.0])); //rotate X
-            rMat = mult(rMat, rotate(-(10*radY), [0.0, 1.0, 0.0])); //rotate Y
+            rMat = mult(rMat, rotate(10*radX, [-1.0, 0.0, 0.0])); //rotate X
+            rMat = mult(rMat, rotate(10*radY, [0.0, 1.0, 0.0])); //rotate Y
 			
 			at = subtract(at, eye);
 			
@@ -396,8 +396,8 @@ function AddEvents()
 		if (event.keyCode == "9" || event.keyCode == "77")
 		{
 			mapView = !mapView;
-			updateView();
 		}
+		updateView();
     });
 }
 
