@@ -21,7 +21,7 @@ var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 // Buffer arrays
 var blockArray = [];
 var blocksPositionsInBuffer = [];
-var vBuffer, cBuffer, iBuffer, sBuffer, swBuffer;
+var vBuffer, cBuffer, iBuffer, sBuffer, swBuffer, centBuffer;
 var iIndex = 0;
 var iIndices = [];
 var colorArray = [];
@@ -30,6 +30,7 @@ var pointArray = [];
 var removedBlocks = [];
 var sIndices = [];
 var swIndices = [];
+var centerPos = [];
 
 // View variables
 var fovy = 45.0;
@@ -55,7 +56,7 @@ var thetaLoc, modelViewLoc, mvMatrix, projectionMatrix, projectionLoc , sBRotati
 var theta =  [-35, 45, 0];
 
 // Shader attributes locations
-var vPosition, vColor;
+var vPosition, vColor, cPosition;
 
 //Block material colors
 var colors = [
@@ -112,7 +113,8 @@ window.onload = function Init() {
     // Attribute resource locations
 	vPosition = gl.getAttribLocation( program, "vPosition");
 	vColor = gl.getAttribLocation( program, "vColor");
-
+	cPosition = gl.getAttribLocation( program, "cPosition");
+		
 	// Initial buffer creation and initial attribute assignment
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -138,7 +140,14 @@ window.onload = function Init() {
 	swBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(), gl.STATIC_DRAW);
-
+	
+	// Center of each box, for every vertice
+	centBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, centBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, flatten(centerPos), gl.STATIC_DRAW);
+	gl.vertexAttribPointer(cPosition, 3, gl.FLOAT, false, 0, 0);
+	gl.enableVertexAttribArray(cPosition);
+	
 	sBR = mat4();
 	sBR = mult(sBR, rotate(45.0, vec3(1.0, 0.0, 0.0)));
 	sBR = mult(sBR, rotate(45.0, vec3(0.0, 0.0, 1.0)));
@@ -188,6 +197,9 @@ function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
             }
         }
     }
+	
+	
+	
 }
 
 function getBlockVertices(x, y, z) {
@@ -199,7 +211,7 @@ function getBlockVertices(x, y, z) {
     var x1y0z1 = x+1 + y*(worldWidth+1) + (z+1)*(worldWidth+1)*(worldHeight+1);
     var x0y1z1 = x + (y+1)*(worldWidth+1) + (z+1)*(worldWidth+1)*(worldHeight+1);
     var x1y1z1 = x+1 + (y+1)*(worldWidth+1) + (z+1)*(worldWidth+1)*(worldHeight+1);
-
+ 
     return [x0y0z0, x1y0z0, x0y1z0, x1y1z0, x0y0z1, x1y0z1, x0y1z1, x1y1z1];
 }
 
@@ -221,6 +233,16 @@ function HandleBufferContent() {
         handleTrianglePointsAndColor(entry, 1, 3, 1);
         handleTrianglePointsAndColor(entry, 2, 1, 3);
         handleTrianglePointsAndColor(entry, 3, 3, 1);
+		
+		corner1 = worldGrid[entry.vecIndices[0]];
+		corner2 = worldGrid[entry.vecIndices[7]];
+		centerP = mix(corner1, corner2, 0.5);
+	
+		for(var i = 0; i < 36; i++)
+		{
+			centerPos.push(centerP);
+		}
+		
     });
 }
 
@@ -248,27 +270,32 @@ function updateWireframe()
 	var p0, p1, p2, p3, p4, p5, p6, p7;
     var frameColor = vec4(0.0, 0.0, 0.0, 1.0);
     blockArray.forEach(function(entry)
-                       {
-                           p0 = worldGrid[entry.vecIndices[0]];
-                           p1 = worldGrid[entry.vecIndices[1]];
-                           p2 = worldGrid[entry.vecIndices[2]];
-                           p3 = worldGrid[entry.vecIndices[3]];
-                           p4 = worldGrid[entry.vecIndices[4]];
-                           p5 = worldGrid[entry.vecIndices[5]];
-                           p6 = worldGrid[entry.vecIndices[6]];
-                           p7 = worldGrid[entry.vecIndices[7]];
+		{
+			p0 = worldGrid[entry.vecIndices[0]];
+			p1 = worldGrid[entry.vecIndices[1]];
+			p2 = worldGrid[entry.vecIndices[2]];
+			p3 = worldGrid[entry.vecIndices[3]];
+			p4 = worldGrid[entry.vecIndices[4]];
+			p5 = worldGrid[entry.vecIndices[5]];
+			p6 = worldGrid[entry.vecIndices[6]];
+			p7 = worldGrid[entry.vecIndices[7]];
 
-                           pointArray.push(p0, p1, p1, p3, p3, p2, p2, p0,
-                                           p4, p5, p5, p7, p7, p6, p6, p4,
-                                           p4, p0, p5, p1, p7, p3, p6, p2);
-
-                           for (var i = 0; i < 24; i++)
-                           {
-                               colorArray.push(frameColor);
-                               iIndices.push(iIndex + i);
-                           }
-                           iIndex += 24;
-                       });
+			pointArray.push(p0, p1, p1, p3, p3, p2, p2, p0,
+							p4, p5, p5, p7, p7, p6, p6, p4,
+							p4, p0, p5, p1, p7, p3, p6, p2);
+			
+			corner1 = p0;
+			corner2 = p7;
+			centerP = mix(corner1, corner2, 0.5);
+			
+			for (var i = 0; i < 24; i++)
+			{
+				centerPos.push(centerP);
+				colorArray.push(frameColor);
+				iIndices.push(iIndex + i);
+			}
+			iIndex += 24;
+		});
 }
 
 // ********************************************
@@ -378,7 +405,6 @@ function Render()
     gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
 	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
-    //gl.uniform3fv(thetaLoc, theta);
     gl.uniform3fv(thetaLoc, theta);
 	
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(scalem(1.0,1.0,1.0)));
@@ -413,6 +439,46 @@ function renderSmallBlocks()
     gl.drawElements(gl.LINES, 24*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
 
 	
+}
+
+// ********************************************
+// Helper functions
+// ********************************************
+
+//Returns the color of the given blockType, calculated out from the norm of the plane
+function AddColor(p1, p2, p3) {
+    var normal = cross(subtract(p3, p1), subtract(p2, p1));
+    var colorFactor = 10;
+    normal = [colorFactor*Math.abs(normal[0]), colorFactor*Math.abs(normal[1]), colorFactor*Math.abs(normal[2])];
+
+    return vec4(normal, 1.0);
+}
+
+//Assign a blockType to a given spot in the blockArray, depending on
+//the specification of the map level.
+function assignBlockType(i,j)
+{
+    if (j > groundLevel)
+       return "Air";
+    else if (j === groundLevel && i <= waterLevel)
+        return "Grass";
+    else if (i > waterLevel)
+        return "Water";
+    else
+        return "Dirt";
+}
+
+//Return the appearance of a block, depended on its blockType
+function assignBlockAppearance(blockType)
+{
+    if (blockType == "Air")
+        return "Air";
+    if (blockType == "Lava")
+        return "Dangerous";
+    if (blockType == "Water")
+        return "Liquid";
+    if (blockType == "Dirt" || blockType == "Grass" || blockType == "Metal" ||  blockType == "Stone")
+        return "Solid";
 }
 
 function removeSelectedBlock(blockNumber) {
@@ -463,44 +529,4 @@ function addSelectedBlock(blockNumber) {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(iIndices), gl.STATIC_DRAW);
-}
-
-// ********************************************
-// Helper functions
-// ********************************************
-
-//Returns the color of the given blockType, calculated out from the norm of the plane
-function AddColor(p1, p2, p3) {
-    var normal = cross(subtract(p3, p1), subtract(p2, p1));
-    var colorFactor = 10;
-    normal = [colorFactor*Math.abs(normal[0]), colorFactor*Math.abs(normal[1]), colorFactor*Math.abs(normal[2])];
-
-    return vec4(normal, 1.0);
-}
-
-//Assign a blockType to a given spot in the blockArray, depending on
-//the specification of the map level.
-function assignBlockType(i,j)
-{
-    if (j > groundLevel)
-       return "Air";
-    else if (j === groundLevel && i <= waterLevel)
-        return "Grass";
-    else if (i > waterLevel)
-        return "Water";
-    else
-        return "Dirt";
-}
-
-//Return the appearance of a block, depended on its blockType
-function assignBlockAppearance(blockType)
-{
-    if (blockType == "Air")
-        return "Air";
-    if (blockType == "Lava")
-        return "Dangerous";
-    if (blockType == "Water")
-        return "Liquid";
-    if (blockType == "Dirt" || blockType == "Grass" || blockType == "Metal" ||  blockType == "Stone")
-        return "Solid";
 }
