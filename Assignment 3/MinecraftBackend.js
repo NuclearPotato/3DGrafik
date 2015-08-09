@@ -442,7 +442,7 @@ function Render()
 	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
 	
-	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(scalem(1.0,1.0,1.0)));
+	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
 	
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
