@@ -295,24 +295,6 @@ function updateWireframe()
 		});
 }
 
-function updateView()
-{
-	if(mapView)
-	{
-		var mapEye = vec3(0.0, 2.0, 0.0);
-		var mapUp = vec3(0.0, 0.0, 1.0);
-		var mapAt = vec3(0.0, 0.0, 0.0);
-		
-		mvMatrix = lookAt(mapEye,mapAt,mapUp);
-		projectionMatrix = ortho(-1.2, 1.2, -1.2, 1.2, near, far );
-	}
-	else
-	{		
-		mvMatrix = lookAt(eye,at,up);
-		projectionMatrix = perspective(fovy, aspect, near, far);
-	}
-}
-
 // ********************************************
 // Event listening functions
 // ********************************************
@@ -574,4 +556,22 @@ function addSelectedBlock(blockNumber) {
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(iIndices), gl.STATIC_DRAW);
+}
+
+function updateView()
+{
+	if(mapView)
+	{
+		var mapEye = vec3(0.0, 2.0, 0.0);
+		var mapUp = vec3(0.0, 0.0, 1.0);
+		var mapAt = vec3(0.0, 0.0, 0.0);
+		
+		mvMatrix = lookAt(mapEye,mapAt,mapUp);
+		projectionMatrix = ortho(-1.2, 1.2, -1.2, 1.2, near, far );
+	}
+	else
+	{		
+		mvMatrix = lookAt(eye,at,up);
+		projectionMatrix = perspective(fovy, aspect, near, far);
+	}
 }
