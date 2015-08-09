@@ -382,21 +382,34 @@ function AddEvents()
     document.addEventListener("keydown", function(event) {
         console.log(event.keyCode);
         if (event.keyCode == "68") { //D
-
+            var move = subtract(at, eye);
+            move = normalize(move);
+            move = mult([0.1, 0.0, 0.1], move);
+            move = vec3(-move[2], move[1], move[0]);
+            at = add(at, move);
+            eye = add(eye, move);
         }
         if (event.keyCode == "65") { //A
-
+            var move = subtract(at, eye);
+            move = normalize(move);
+            move = mult([0.1, 0.0, 0.1], move);
+            move = vec3(move[2], move[1], -move[0]);
+            at = add(at, move);
+            eye = add(eye, move);
         }
         if (event.keyCode == "87") { //W
             var move = subtract(at, eye);
             move = normalize(move);
-
-            move = mult([0.1, 0.1, 0.1], move);
+            move = mult([0.1, 0.0, 0.1], move);
             at = add(at, move);
             eye = add(eye, move);
         }
         if (event.keyCode == "83") { //S
-			
+            var move = subtract(at, eye);
+            move = normalize(move);
+            move = mult([0.1, 0.0, 0.1], move);
+            at = subtract(at, move);
+            eye = subtract(eye, move);
         }
 		if (event.keyCode == "9" || event.keyCode == "77")
 		{
