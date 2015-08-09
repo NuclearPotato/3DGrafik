@@ -21,7 +21,7 @@ void main()
 	tPos = tPos + cPosition;
 	
 	fColor = vColor;
-	gl_Position = tPos * modelView * projectionMatrix;
+	gl_Position = projectionMatrix * modelView * tPos;
 
 	//modelView * po
 }

@@ -33,10 +33,10 @@ var swIndices = [];
 var centerPos = [];
 
 // View variables
-var fovy = 45.0;
+var fovy = 90.0;
 var aspect = 1;
-var near = 0.5;
-var far = 5.0;
+var near = 0.1;
+var far = 1000.0;
 var colorArray = [];
 var pointArray = [];
 
@@ -46,21 +46,15 @@ var mvMatrix;
 var rotMatrix; //Rotate the point we look at
 
 var eye = vec3(0.0,1.2,-0.5);
-var at = vec3(0.0,0.0,2.0);
+var at = vec3(0.0,1.2,2.0);
 const up = vec3(0.0, 1.0, 0.0);
 
-var p = 0.0;
-var t = 0.0;
-var dr = 5.0 * Math.PI/180.0;
-
 // Shader related variables
-var theta =  [-35, 45, 0];
 var projectionLoc, modelView;
 var sBR;
 
 // Uniform variable locations
 var thetaLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix;
-var theta =  [-35, 45, 0];
 
 // Shader attributes locations
 var vPosition, vColor, cPosition;
@@ -112,7 +106,6 @@ window.onload = function Init() {
     gl.useProgram( program );
 
 	// Uniform resource locations
-    thetaLoc = gl.getUniformLocation(program,"theta");
     projectionLoc = gl.getUniformLocation(program, "projectionMatrix");
     sBRotationMatrix = gl.getUniformLocation(program, "sBRotationMatrix");
     modelViewLoc = gl.getUniformLocation(program, "modelView");
@@ -325,16 +318,28 @@ function AddEvents()
     bP.addEventListener("mousemove", function(event) {
         if (mousePressed) {
             newMousePosition = vec2(event.clientX, event.clientY);
-            theta = [theta[0] + prevMousePosition[1] - newMousePosition[1], theta[1] + prevMousePosition[0] - newMousePosition[0], theta[2] + 0];
+            var radX = radians(prevMousePosition[1] - newMousePosition[1]);
+            var radY = radians(prevMousePosition[0] - newMousePosition[0]);
 			prevMousePosition = newMousePosition;
 			
             //rotMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
 			var rMat = mat4();
-            rMat = mult(rMat, rotate(theta[0], [1.0, 0.0, 0.0])); //rotate X
-            rMat = mult(rMat, rotate(theta[1], [0.0, 1.0, 0.0])); //rotate Y
-            rMat = mult(rMat, rotate(theta[2], [0.0, 0.0, 1.0])); //rotate Z
+            rMat = mult(rMat, rotate(10*radX, [1.0, 0.0, 0.0])); //rotate X
+            rMat = mult(rMat, rotate(-(10*radY), [0.0, 1.0, 0.0])); //rotate Y
+			
 			at = subtract(at, eye);
-			// multiply at with rMat;
+			
+			// change at vec3 to mat4 to use shitty MV.js code;
+			var atMatrix = mat4(
+							vec4(1.0, 0.0, 0.0, at[0]),
+							vec4(0.0, 1.0, 0.0, at[1]),
+							vec4(0.0, 0.0, 1.0, at[2]),
+							vec4(0.0, 0.0, 0.0, 1.0));
+			atMatrix = mult(rMat, atMatrix);
+			
+			//revert to vec3
+			at = vec3(atMatrix[0][3], atMatrix[1][3], atMatrix[2][3]);
+			
 			at = add(at, eye);
         }
     });
@@ -358,17 +363,17 @@ function AddEvents()
 
     iP.addEventListener("keydown", function(event) {
         console.log(event.keyCode);
-        if (event.keyCode == "68") {
-            t += dr
+        if (event.keyCode == "68") { //D
+           
         }
-        if (event.keyCode == "65") {
-            t -= dr
+        if (event.keyCode == "65") { //A
+			
         }
-        if (event.keyCode == "87") {
-            p += dr
+        if (event.keyCode == "87") { //W
+			
         }
-        if (event.keyCode == "83") {
-            p -= dr
+        if (event.keyCode == "83") { //S
+			
         }
 		if (event.keyCode == "9" || event.keyCode == "77")
 		{
@@ -430,7 +435,6 @@ function Render()
     gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
 	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
-    gl.uniform3fv(thetaLoc, theta);
 	
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(scalem(1.0,1.0,1.0)));
 	
