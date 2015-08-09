@@ -27,6 +27,7 @@ Index buffers are used for drawing with drawElements
 Finally, we have one cPosition buffer, 
 that gives each vertex the position of the center of its parent-block, 
 which allows small-blocks-vertices to be scaled and rotated around their block center.
+This is to avoid having to do individual draw calls for every small block.
 
 % Which drawcalls do you have (and why?)
 
