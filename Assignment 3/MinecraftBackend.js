@@ -33,7 +33,7 @@ var swIndices = [];
 var centerPos = [];
 
 // View variables
-var fovy = 90.0;
+var fovy = 45.0;
 var aspect = 1;
 var near = 0.1;
 var far = 1000.0;
@@ -361,16 +361,22 @@ function AddEvents()
             addBlock = true;
     });
 
-    iP.addEventListener("keydown", function(event) {
+
+    document.addEventListener("keydown", function(event) {
         console.log(event.keyCode);
         if (event.keyCode == "68") { //D
-           
+
         }
         if (event.keyCode == "65") { //A
-			
+
         }
         if (event.keyCode == "87") { //W
-			
+            var move = subtract(at, eye);
+            move = normalize(move);
+
+            move = mult([0.1, 0.1, 0.1], move);
+            at = add(at, move);
+            eye = add(eye, move);
         }
         if (event.keyCode == "83") { //S
 			
