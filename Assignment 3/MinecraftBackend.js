@@ -153,11 +153,8 @@ window.onload = function Init() {
 	sBR = mult(sBR, rotate(45.0, vec3(0.0, 0.0, 1.0)));
 	sBR = mult(sBR, scalem(0.25,0.25,0.25));
 
-    //mvMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
-    //mvMatrix = mult(mvMatrix, rotate(-theta[0], [1.0, 0.0, 0.0]));
-    //mvMatrix = mult(mvMatrix, rotate(-theta[1], [0.0, 1.0, 0.0]));
-    //mvMatrix = mult(mvMatrix, rotate(-theta[2], [0.0, 0.0, 1.0]));
-    //mvMatrix.matrix = false;
+    //Initialize Views
+	updateView();
 
     //Adds eventListeners
     AddEvents();
@@ -298,6 +295,24 @@ function updateWireframe()
 		});
 }
 
+function updateView()
+{
+	if(mapView)
+	{
+		var mapEye = vec3(0.0, 2.0, 0.0);
+		var mapUp = vec3(0.0, 0.0, 1.0);
+		var mapAt = vec3(0.0, 0.0, 0.0);
+		
+		mvMatrix = lookAt(mapEye,mapAt,mapUp);
+		projectionMatrix = ortho(-1.2, 1.2, -1.2, 1.2, near, far );
+	}
+	else
+	{		
+		mvMatrix = lookAt(eye,at,up);
+		projectionMatrix = perspective(fovy, aspect, near, far);
+	}
+}
+
 // ********************************************
 // Event listening functions
 // ********************************************
@@ -341,6 +356,8 @@ function AddEvents()
 			at = vec3(atMatrix[0][3], atMatrix[1][3], atMatrix[2][3]);
 			
 			at = add(at, eye);
+			
+			updateView();
         }
     });
 
@@ -384,6 +401,7 @@ function AddEvents()
 		if (event.keyCode == "9" || event.keyCode == "77")
 		{
 			mapView = !mapView;
+			updateView();
 		}
     });
 }
@@ -412,27 +430,6 @@ function Render()
         addBlock = false;
         console.log(iIndices.length);
     }
-
-	if(mapView)
-	{
-		var mapEye = vec3(0.0,2.0,0.0);
-		//up = vec3(0.0,1.0,0.0);
-		var mapAt = vec3(0.0, 0.0, 0.0);
-		
-		mvMatrix = lookAt(mapEye,mapAt,up);
-	}
-	else
-	{
-		//eye = vec3(-4.0*Math.sin(t)*Math.cos(p), -4.0*Math.sin(t)*Math.sin(p), -4.0*Math.cos(t));
-		//up = vec3(0.0,1.0,0.0);
-		//at = vec3(0.0, 0.0, 0.0);
-		
-		mvMatrix = lookAt(eye,at,up);
-	}
-
-
-    projectionMatrix = perspective(fovy, aspect, near, far);
-
 
 	//mvMatrix = lookAt(eye,at,up);
     //mvMatrix = mult(mvMatrix, rotate(45, [1.0, 0.0, 0.0]));
