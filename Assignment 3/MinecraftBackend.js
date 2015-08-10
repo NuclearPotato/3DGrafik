@@ -800,14 +800,17 @@ function addSelectedBlock(blockNumber, blockType, blockAppearance) {
     blockArray[blockNumber-1].blockType = blockType;
     blockArray[blockNumber-1].appearance = blockAppearance;
 
-    var mapPos = getTexMapLocation(entry.blockType);
+    var mapPos = getTexMapLocation(blockType);
 
-    for (var i = 0 ; i < 6 ; i++) {
+    for (var k = 0 ; k < 6 ; k++) {
+
+        texCoordsArray[blockNumber-1] = mapPos[0];
+
         handleTexPoints(mapPos[1], mapPos[0], mapPos[2]);
         handleTexPoints(mapPos[0], mapPos[2], mapPos[3]);
     }
 
-
+    
     blocksPositionsInBuffer[numberOfActiveBlocks] = blockNumber-1;
 
     numberOfActiveBlocks++;
