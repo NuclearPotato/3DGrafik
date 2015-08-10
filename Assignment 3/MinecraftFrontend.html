@@ -36,11 +36,18 @@ varying vec2 fTexCoord;
 
 uniform sampler2D texMap;
 uniform vec4 wireframe;
+uniform int pick;
 
 void main()
 {
-    gl_FragColor = texture2D(texMap, fTexCoord) * wireframe;
-
+	if(pick == 0)
+	{
+		gl_FragColor = texture2D(texMap, fTexCoord) * wireframe;
+	}
+	else
+	{
+		gl_FragColor = fColor;
+	}
 }
 </script>
 

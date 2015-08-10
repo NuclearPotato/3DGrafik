@@ -66,7 +66,7 @@ var modelView;
 var sBR;
 
 // Uniform variable locations
-var wireframeLoc, texMapLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix;
+var wireframeLoc, texMapLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix, pick;
 
 // Shader attributes locations
 var vPosition, vColor, cPosition, vTexCoord;
@@ -112,6 +112,8 @@ window.onload = function Init() {
     modelViewLoc = gl.getUniformLocation(program, "modelView");
     texMapLoc = gl.getUniformLocation(program, "texMaps");
     wireframeLoc = gl.getUniformLocation(program, "wireframe");
+	pick = gl.getUniformLocation(program,"pick");
+	gl.uniform1i(pick, 0);
 
     // Attribute resource locations
 	vPosition = gl.getAttribLocation( program, "vPosition");
@@ -546,18 +548,22 @@ function AddEvents()
 		// Adding and removing blocks with pickings
 		if (event.keyCode == "81") // Q
 		{
-			var block = doPicking();
-			var cell = getCell(colorToGrid(block));
-			console.log(block);
-			//removeSelectedBlock(cell);
-			// Add block at pick location
+			var block = colorToGrid(doPicking());
+			var cell = getCell(block);
+			// Remove block at pick location
+			removeSelectedBlock(cell);
 		}
-		if (event.keyCide == "69") // E
+		if (event.keyCode == "69") // E
 		{
 			var face = doPickFace();
-			var block = doPicking();
-			var cell = (ColorToGrid(block));
-			// Remove block at pick location
+			var block = colorToGrid(doPicking());
+			var pos = faceToPos(face, block)
+			var cell = getCell(pos);
+			console.log(block);
+			console.log(pos);
+			// Add block at pick location
+			addSelectedBlock(cell, "Stone", "Solid");
+			//removeSelectedBlock(cell);
 		}
 		// Change to ortho top-down mapview
         if (event.keyCode == "9" || event.keyCode == "77") 
@@ -615,7 +621,8 @@ function Render()
     gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
-
+	gl.uniform1i(pick, 0);
+	
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
     //gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 
@@ -945,7 +952,7 @@ function doPicking()
 	// Prepare the framebuffer for drawing
 	gl.bindFramebuffer(gl.FRAMEBUFFER, pickFramebuffer);
 	gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
-	gl.bindTexture(gl.TEXTURE_2D, pickTexture);
+	//gl.bindTexture(gl.TEXTURE_2D, pickTexture);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	var x = prevMousePosition[0];
@@ -956,7 +963,8 @@ function doPicking()
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
 	gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix))
-
+	gl.uniform1i(pick, 1);
+	
 	//Render boxes
     gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
 	gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
@@ -987,15 +995,20 @@ function doPickFace()
 {
 	var color = new Uint8Array(4);
 
+	// Prepare the framebuffer for drawing
+	gl.bindFramebuffer(gl.FRAMEBUFFER, pickFramebuffer);
+	gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
+	//gl.bindTexture(gl.TEXTURE_2D, pickTexture);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
 	var x = prevMousePosition[0];
 	var y = canvas.height - prevMousePosition[1];
 	
 	gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
-	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
-	
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
-
+	gl.uniform1i(pick, 1);
+	
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
 
     gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
@@ -1003,5 +1016,45 @@ function doPickFace()
 	//Render boxes
     gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
 
+	// Revert to usual drawing
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+
 	return color;
+}
+
+// Adds one blocklength to 
+function faceToPos(color, block)
+{
+	var r = color[0];
+	var g = color[1];
+	var b = color[2];
+	var axis;
+	//Red is X, Green is Y, Blue is Z
+	if(r > g && r > b) // Red
+	{
+		axis = 0;
+	}
+	else if(g > r && g > b) // Green
+	{
+		axis = 1;
+	}
+	else if(b > r && b > g) // Blue
+	{
+		axis = 2;
+	}
+	//Compare target-block to eye pos to find which facing it is
+	var eyeA = eye[axis];
+	var blockA = block[axis];
+	var worldSize = [worldWidth,worldHeight,worldDepth];
+	if(eyeA > blockA)
+	{
+		block[axis] += 2/worldSize[axis];
+	}
+	else
+	{
+		block[axis] -= 2/worldSize[axis];
+	}
+	return block;
 }
