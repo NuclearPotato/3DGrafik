@@ -802,20 +802,25 @@ function addSelectedBlock(blockNumber, blockType, blockAppearance) {
     blockArray[blockNumber-1].blockType = blockType;
     blockArray[blockNumber-1].appearance = blockAppearance;
 
+
+
     var mapPos = getTexMapLocation(blockType);
 
     for (var k = 0 ; k < 6 ; k++) {
-
-        texCoordsArray[blockNumber-1] = mapPos[0];
-
-        handleTexPoints(mapPos[1], mapPos[0], mapPos[2]);
-        handleTexPoints(mapPos[0], mapPos[2], mapPos[3]);
+        texCoordsArray[36*(blockNumber-1) + 6*k] = mapPos[1];
+        texCoordsArray[36*(blockNumber-1) + 1 + 6*k] = mapPos[0];
+        texCoordsArray[36*(blockNumber-1) + 2 + 6*k] = mapPos[2];
+        texCoordsArray[36*(blockNumber-1) + 3 + 6*k] = mapPos[0];
+        texCoordsArray[36*(blockNumber-1) + 4 + 6*k] = mapPos[2];
+        texCoordsArray[36*(blockNumber-1) + 5 + 6*k] = mapPos[3];
     }
 
-    
     blocksPositionsInBuffer[numberOfActiveBlocks] = blockNumber-1;
 
     numberOfActiveBlocks++;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW);
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(iIndices), gl.STATIC_DRAW);
