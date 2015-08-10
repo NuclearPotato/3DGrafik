@@ -33,9 +33,9 @@ var swIndices = [];
 var centerPos = [];
 
 // View variables
-var fovy = 45.0;
+var fovy = 72.0;
 var aspect = 1;
-var near = 0.1;
+var near = 0.001;
 var far = 1000.0;
 var colorArray = [];
 var pointArray = [];
@@ -178,7 +178,6 @@ function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
     var xBlockIndex = xPixels;
     var yBlockIndex = yPixels;
     var zBlockIndex = zPixels;
-    //console.log(yPixels);
     for (var z = 0 ; z <= depthSize ; z++) {
         for (var y = 0 ; y <= rowSize ; y++) {
             for (var x = 0 ; x <= columnSize ; x++) {
@@ -186,17 +185,27 @@ function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
                 worldGrid.push(vertice);
 
                 if(z != depthSize && y != rowSize && x != columnSize) {
-                    var newBlock = new Block("Dirt", getBlockVertices(x, y, z), "Solid");
+
+
+
+                    var newBlock = createBlock(x, y, z);
                     blockArray.push(newBlock);
-                    blocksPositionsInBuffer.push(numberOfActiveBlocks);
-                    numberOfActiveBlocks++;
+
+
                 }
             }
         }
     }
-	
-	
-	
+}
+
+function createBlock(x, y, z) {
+
+    if (y == 9)
+        return new Block("Air", getBlockVertices(x, y, z), "Air");
+    blocksPositionsInBuffer.push(blockArray.length);
+    numberOfActiveBlocks++;
+    return new Block("Dirt", getBlockVertices(x, y, z), "Solid");
+
 }
 
 function getBlockVertices(x, y, z) {
@@ -248,6 +257,8 @@ function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncreas
     var p2 = worldGrid[block.vecIndices[start + firstIncrease]];
     var p3 = worldGrid[block.vecIndices[start + firstIncrease + secondIncrease]];
 
+
+
     var normalColor = AddColor(p1, p2, p3);
 
     pointArray.push(p1);
@@ -256,9 +267,13 @@ function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncreas
     colorArray.push(normalColor);
     colorArray.push(normalColor);
     colorArray.push(normalColor);
-    iIndices.push(iIndex);
-    iIndices.push(iIndex+1);
-    iIndices.push(iIndex+2);
+
+    if (block.appearance != "Air") {
+        iIndices.push(iIndex);
+        iIndices.push(iIndex+1);
+        iIndices.push(iIndex+2);
+    }
+
     iIndex += 3;
 }
 
@@ -284,12 +299,16 @@ function updateWireframe()
 			corner1 = p0;
 			corner2 = p7;
 			centerP = mix(corner1, corner2, 0.5);
-			
+
 			for (var i = 0; i < 24; i++)
 			{
 				centerPos.push(centerP);
 				colorArray.push(frameColor);
-				iIndices.push(iIndex + i);
+
+                if (entry.appearance != "Air") {
+                    iIndices.push(iIndex + i);
+                }
+
 			}
 			iIndex += 24;
 		});
@@ -313,7 +332,7 @@ function AddEvents()
     });
 
     bP.addEventListener("mousemove", function(event) {
-        if (mousePressed) {
+        if (mousePressed  && !mapView) {
             newMousePosition = vec2(event.clientX, event.clientY);
             var radX = radians(prevMousePosition[1] - newMousePosition[1]);
             var radY = radians(prevMousePosition[0] - newMousePosition[0]);
@@ -343,16 +362,6 @@ function AddEvents()
         }
     });
 
-    bP.addEventListener("mousewheel", function(event) {
-        if (fovy-event.wheelDelta/10 < 10)
-        //Go to 1. person view
-            fovy = 10;
-        else if (fovy-event.wheelDelta/10 > 120)
-            fovy = 120;
-        else
-            fovy -= event.wheelDelta/10;
-    });
-
     iP.addEventListener("mousedown", function(event) {
         if (event.target.id == "removeBlock")
             deleteBlock = true;
@@ -362,36 +371,58 @@ function AddEvents()
 
 
     document.addEventListener("keydown", function(event) {
-        console.log(event.keyCode);
-        if (event.keyCode == "68") { //D
-            var move = subtract(at, eye);
+        var collisions;
+        var move;
+        if (event.keyCode == "68" && !mapView) { //D
+            move = subtract(at, eye);
+            move[1] = 0.0;
             move = normalize(move);
             move = mult([0.1, 0.0, 0.1], move);
             move = vec3(-move[2], move[1], move[0]);
+
+            collisions = CheckCollision(eye, move);
+            move = mult(move, collisions);
+
             at = add(at, move);
             eye = add(eye, move);
+
         }
-        if (event.keyCode == "65") { //A
-            var move = subtract(at, eye);
+        if (event.keyCode == "65" && !mapView) { //A
+            move = subtract(at, eye);
+            move[1] = 0.0;
             move = normalize(move);
             move = mult([0.1, 0.0, 0.1], move);
             move = vec3(move[2], move[1], -move[0]);
+
+            collisions = CheckCollision(eye, move);
+            move = mult(move, collisions);
+
             at = add(at, move);
             eye = add(eye, move);
         }
-        if (event.keyCode == "87") { //W
-            var move = subtract(at, eye);
+        if (event.keyCode == "87" && !mapView) { //W
+            move = subtract(at, eye);
+            move[1] = 0.0;
             move = normalize(move);
             move = mult([0.1, 0.0, 0.1], move);
+
+            collisions = CheckCollision(eye, move);
+            move = mult(move, collisions);
+
             at = add(at, move);
             eye = add(eye, move);
         }
-        if (event.keyCode == "83") { //S
-            var move = subtract(at, eye);
+        if (event.keyCode == "83" && !mapView) { //S
+            move = subtract(at, eye);
+            move[1] = 0.0;
             move = normalize(move);
-            move = mult([0.1, 0.0, 0.1], move);
-            at = subtract(at, move);
-            eye = subtract(eye, move);
+            move = mult([-0.1, -0.0, -0.1], move);
+
+            collisions = CheckCollision(eye, move);
+            move = mult(move, collisions);
+
+            at = add(at, move);
+            eye = add(eye, move);
         }
 		if (event.keyCode == "9" || event.keyCode == "77")
 		{
@@ -409,26 +440,40 @@ function Render()
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     if (deleteBlock) {
-        removeSelectedBlock(993);
-        removeSelectedBlock(995);
-        removeSelectedBlock(996);
+        removeSelectedBlock(985);
+        removeSelectedBlock(986);
+        removeSelectedBlock(983);
+        removeSelectedBlock(783);
+        removeSelectedBlock(784);
+        removeSelectedBlock(785);
+        removeSelectedBlock(683);
+        removeSelectedBlock(684);
+        removeSelectedBlock(685);
+        removeSelectedBlock(583);
+        removeSelectedBlock(584);
+        removeSelectedBlock(585);
         deleteBlock = false;
-        console.log(iIndices.length);
     }
 
     if (addBlock) {
 
-        addSelectedBlock(995);
-        addSelectedBlock(993);
-        addSelectedBlock(996);
+        addSelectedBlock(983);
+        addSelectedBlock(986);
+        addSelectedBlock(985);
+        addSelectedBlock(783);
+        addSelectedBlock(784);
+        addSelectedBlock(785);
+        addSelectedBlock(683);
+        addSelectedBlock(684);
+        addSelectedBlock(685);
+        addSelectedBlock(583);
+        addSelectedBlock(584);
+        addSelectedBlock(585);
 
         addBlock = false;
-        console.log(iIndices.length);
     }
 
-	//mvMatrix = lookAt(eye,at,up);
-    //mvMatrix = mult(mvMatrix, rotate(45, [1.0, 0.0, 0.0]));
-    //console.log(flatten(mvMatrix));
+    handleGravity();
 
     gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
 	
@@ -472,6 +517,15 @@ function renderSmallBlocks()
 // Helper functions
 // ********************************************
 
+function handleGravity() {
+    var newY = [0.0, -0.05, 0.0];
+    var collisions = CheckCollision(eye, newY);
+    newY = mult(newY, collisions);
+    at = add(at, newY);
+    eye = add(eye, newY);
+    updateView();
+}
+
 //Returns the color of the given blockType, calculated out from the norm of the plane
 function AddColor(p1, p2, p3) {
     var normal = cross(subtract(p3, p1), subtract(p2, p1));
@@ -511,10 +565,14 @@ function assignBlockAppearance(blockType)
 function removeSelectedBlock(blockNumber) {
 
     var blockPos = blocksPositionsInBuffer.indexOf(blockNumber-1);
+
     var pointStartIndex = 36*(blockPos);
     var wireframeStartIndex = 36*numberOfActiveBlocks + 24*(blockPos);
 
     blocksPositionsInBuffer.splice(blockPos,1);
+
+    blockArray[blockNumber-1].blockType = "Air";
+    blockArray[blockNumber-1].appearance = "Air";
 
     var removedWireframe = iIndices.splice(wireframeStartIndex, 24); // Deleting wireframe points
     var removedBlock = iIndices.splice(pointStartIndex, 36); // Deleting block points
@@ -570,8 +628,70 @@ function updateView()
 		projectionMatrix = ortho(-1.2, 1.2, -1.2, 1.2, near, far );
 	}
 	else
-	{		
+	{
 		mvMatrix = lookAt(eye,at,up);
 		projectionMatrix = perspective(fovy, aspect, near, far);
 	}
+}
+
+function CheckCollision(eye, vectors) {
+    var newCoords = add(eye, mult([2.0, 4.0, 2.0], vectors));
+    //var newCoords = add(eye, vectors);
+    var axisCollision = [1.0, 1.0, 1.0];
+
+    //Checks if outside the world for the Y axis
+    if(newCoords[1] < -1.0 || 1.2 < newCoords[1])
+        return axisCollision;
+
+    //Checks if inside the world for the X and Z axis
+    if(-1.0 < newCoords[0] && newCoords[0] < 1.0
+        && -1.0 < newCoords[2] && newCoords[2] < 1.0) {
+
+        if(vectors[0] != 0.0) {
+            var xCollisionBlock = GetCell([newCoords[0], eye[1], eye[2]]);
+            if(xCollisionBlock.appearance == "Solid")
+                axisCollision[0] = 0.0;
+        }
+
+        if(vectors[1] !=0.0) {
+            if(newCoords[1] > 1.0)
+                newCoords[1] = 1.0;
+            var yCollisionBlock = GetCell([eye[0], newCoords[1], eye[2]]);
+            if(yCollisionBlock.appearance == "Solid")
+                axisCollision[1] = 0.0;
+        }
+
+        if(vectors[2] != 0.0) {
+            var zCollisionBlock = GetCell([eye[0], eye[1], newCoords[2]]);
+            if(zCollisionBlock.appearance == "Solid")
+                axisCollision[2] = 0.0;
+        }
+    }
+
+    return axisCollision;
+}
+
+function GetCell(vec) {
+    var blockWidth = 2/worldWidth;
+    var blockHeight = 2/worldHeight;
+    var blockDepth = 2/worldDepth;
+
+    xBlockNumber = Math.floor((vec[0]+1)/blockWidth);
+    yBlockNumber = Math.floor((vec[1]+1)/blockHeight);
+    zBlockNumber = Math.floor((vec[2]+1)/blockDepth);
+
+    if (xBlockNumber > 9)
+        xBlockNumber = 9;
+
+    if (yBlockNumber > 9)
+        yBlockNumber = 9;
+
+    if (zBlockNumber > 9)
+        zBlockNumber = 9;
+
+    var xBlockPos = xBlockNumber;
+    var yBlockPos = yBlockNumber*worldWidth;
+    var zBlockPos = zBlockNumber*worldWidth*worldHeight;
+
+    return blockArray[xBlockPos + yBlockPos + zBlockPos];
 }
