@@ -21,7 +21,7 @@ var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 // Buffer arrays
 var blockArray = [];
 var blocksPositionsInBuffer = [];
-var vBuffer, cBuffer, iBuffer, sBuffer, swBuffer, centBuffer;
+var vBuffer, cBuffer, iBuffer, sBuffer, swBuffer, centBuffer, contColBuffer;
 var iIndex = 0;
 var iIndices = [];
 var colorArray = [];
@@ -30,7 +30,14 @@ var pointArray = [];
 var removedBlocks = [];
 var sIndices = [];
 var swIndices = [];
+
+var centerColor = [];
 var centerPos = [];
+
+// Picking buffers
+var pickFramebuffer;
+var pickDepthBuffer;
+var pickTexture;
 
 // View variables
 var fovy = 72.0;
@@ -94,13 +101,14 @@ window.onload = function Init() {
     gl.clear( gl.COLOR_BUFFER_BIT );
 
     gl.enable(gl.DEPTH_TEST);
+	gl.disable(gl.DITHER);
 
     // Initialize the coordinate system
     //initializeCoordSystem(worldWidth,worldHeight);
     Initialize3DCoordSystem(worldWidth, worldHeight, worldDepth);
     HandleBufferContent();
     updateWireframe();
-
+	
     // Load shaders
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
@@ -146,8 +154,47 @@ window.onload = function Init() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, centBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, flatten(centerPos), gl.STATIC_DRAW);
 	gl.vertexAttribPointer(cPosition, 3, gl.FLOAT, false, 0, 0);
-	gl.enableVertexAttribArray(cPosition);
+	gl.enableVertexAttribArray(cPosition); 
 	
+	// Prepare picking buffers
+	pickFramebuffer = gl.createFramebuffer();
+	gl.bindFramebuffer( gl.FRAMEBUFFER, pickFramebuffer);
+	pickFramebuffer.width = 1024;
+    pickFramebuffer.height = 512;
+	
+	pickDepthBuffer = gl.createRenderbuffer();
+	gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
+	gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 
+		pickFramebuffer.width, pickFramebuffer.height);
+	
+	pickTexture = gl.createTexture();
+    gl.bindTexture( gl.TEXTURE_2D, pickTexture );
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
+		pickFramebuffer.width, pickFramebuffer.height, 
+		0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    gl.generateMipmap(gl.TEXTURE_2D);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	
+	gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, pickTexture, 0);
+	gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, pickDepthBuffer);
+	
+	if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) 
+	{
+		alert("this combination of attachments does not work");
+		return;
+	}
+	
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	
+	contColBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, contColBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(centerColor), gl.STATIC_DRAW); 
+	
+	// Prepare rotation matrix for small-blocks
 	sBR = mat4();
 	sBR = mult(sBR, rotate(45.0, vec3(1.0, 0.0, 0.0)));
 	sBR = mult(sBR, rotate(45.0, vec3(0.0, 0.0, 1.0)));
@@ -183,32 +230,26 @@ function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
             for (var x = 0 ; x <= columnSize ; x++) {
                 var vertice = vec3(xPixels*x - 1, yPixels*y - 1, zPixels*z - 1);
                 worldGrid.push(vertice);
-
                 if(z != depthSize && y != rowSize && x != columnSize) {
-
-
-
                     var newBlock = createBlock(x, y, z);
                     blockArray.push(newBlock);
-
-
                 }
             }
         }
     }
 }
 
-function createBlock(x, y, z) {
-
+function createBlock(x, y, z)
+{
     if (y == 9)
         return new Block("Air", getBlockVertices(x, y, z), "Air");
     blocksPositionsInBuffer.push(blockArray.length);
     numberOfActiveBlocks++;
     return new Block("Dirt", getBlockVertices(x, y, z), "Solid");
-
 }
 
-function getBlockVertices(x, y, z) {
+function getBlockVertices(x, y, z) 
+{
     var x0y0z0 = x + y*(worldWidth+1) + z*(worldWidth+1)*(worldHeight+1);
     var x1y0z0 = x+1 + y*(worldWidth+1) + z*(worldWidth+1)*(worldHeight+1);
     var x0y1z0 = x + (y+1)*(worldWidth+1) + z*(worldWidth+1)*(worldHeight+1);
@@ -222,9 +263,10 @@ function getBlockVertices(x, y, z) {
 }
 
 
-function HandleBufferContent() {
-
-    blockArray.forEach(function (entry) {
+function HandleBufferContent() 
+{
+    blockArray.forEach(function (entry) 
+	{
         handleTrianglePointsAndColor(entry, 0, 1, 1);
         handleTrianglePointsAndColor(entry, 1, 1, 1);
         handleTrianglePointsAndColor(entry, 4, 1, 1);
@@ -243,21 +285,35 @@ function HandleBufferContent() {
 		corner1 = worldGrid[entry.vecIndices[0]];
 		corner2 = worldGrid[entry.vecIndices[7]];
 		centerP = mix(corner1, corner2, 0.5);
-	
+		
+		// Prepare center positions for use as color in picking
+		
+		var cColor = add(centerP, vec3(1.0,1.0,1.0));
+		var matrix = mat4(
+							vec4(1.0, 0.0, 0.0, cColor[0]),
+							vec4(0.0, 1.0, 0.0, cColor[1]),
+							vec4(0.0, 0.0, 1.0, cColor[2]),
+							vec4(0.0, 0.0, 0.0, 1.0));
+		
+		matrix = mult(scalem(0.5,0.5,0.5), matrix);
+		
+		cColor = vec4(matrix[0][3], matrix[1][3], matrix[2][3], 1.0);
+		
+		// Add center position attributes
 		for(var i = 0; i < 36; i++)
 		{
+			centerColor.push(cColor);
 			centerPos.push(centerP);
 		}
 		
     });
 }
 
-function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncrease) {
+function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncrease) 
+{
     var p1 = worldGrid[block.vecIndices[start]];
     var p2 = worldGrid[block.vecIndices[start + firstIncrease]];
     var p3 = worldGrid[block.vecIndices[start + firstIncrease + secondIncrease]];
-
-
 
     var normalColor = AddColor(p1, p2, p3);
 
@@ -268,7 +324,8 @@ function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncreas
     colorArray.push(normalColor);
     colorArray.push(normalColor);
 
-    if (block.appearance != "Air") {
+    if (block.appearance != "Air") 
+	{
         iIndices.push(iIndex);
         iIndices.push(iIndex+1);
         iIndices.push(iIndex+2);
@@ -295,20 +352,17 @@ function updateWireframe()
 			pointArray.push(p0, p1, p1, p3, p3, p2, p2, p0,
 							p4, p5, p5, p7, p7, p6, p6, p4,
 							p4, p0, p5, p1, p7, p3, p6, p2);
-			
 			corner1 = p0;
 			corner2 = p7;
 			centerP = mix(corner1, corner2, 0.5);
-
 			for (var i = 0; i < 24; i++)
 			{
 				centerPos.push(centerP);
+				centerColor.push(vec4(0.0,0.0,0.0,0.0));
 				colorArray.push(frameColor);
-
                 if (entry.appearance != "Air") {
                     iIndices.push(iIndex + i);
                 }
-
 			}
 			iIndex += 24;
 		});
@@ -360,6 +414,10 @@ function AddEvents()
 			
 			updateView();
         }
+		else
+		{
+			prevMousePosition = vec2(event.clientX, event.clientY);
+		}
     });
 
     iP.addEventListener("mousedown", function(event) {
@@ -385,7 +443,6 @@ function AddEvents()
 
             at = add(at, move);
             eye = add(eye, move);
-
         }
         if (event.keyCode == "65" && !mapView) { //A
             move = subtract(at, eye);
@@ -424,6 +481,23 @@ function AddEvents()
             at = add(at, move);
             eye = add(eye, move);
         }
+		// Adding and removing blocks with pickings
+		if (event.keyCode == "81") // Q
+		{
+			var block = doPicking();
+			var cell = getCell(colorToGrid(block));
+			console.log(cell);
+			removeSelectedBlock(cell);
+			// Add block at pick location
+		}
+		if (event.keyCide == "69") // E
+		{
+			var face = doPickFace();
+			var block = doPicking();
+			var cell = (ColorToGrid(block));
+			// Remove block at pick location
+		}
+		// Change to ortho top-down mapview
 		if (event.keyCode == "9" || event.keyCode == "77")
 		{
 			mapView = !mapView;
@@ -439,7 +513,8 @@ function Render()
 {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    if (deleteBlock) {
+    if (deleteBlock) 
+	{
         removeSelectedBlock(985);
         removeSelectedBlock(986);
         removeSelectedBlock(983);
@@ -455,8 +530,8 @@ function Render()
         deleteBlock = false;
     }
 
-    if (addBlock) {
-
+    if (addBlock) 
+	{
         addSelectedBlock(983);
         addSelectedBlock(986);
         addSelectedBlock(985);
@@ -469,18 +544,16 @@ function Render()
         addSelectedBlock(583);
         addSelectedBlock(584);
         addSelectedBlock(585);
-
         addBlock = false;
     }
-
+	
     handleGravity();
-
+	
     gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
 	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
 	
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
-	
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
 
@@ -499,14 +572,15 @@ function Render()
 //Renders the small blocks that appear after removing a box
 function renderSmallBlocks()
 {
+	// Rotation animation
 	sBR = mult(sBR, rotate(0.5, vec3(0.0,1.0,0.0)));
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(sBR));
 	
-	//Render boxes
+	// Render boxes
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
     gl.drawElements(gl.TRIANGLES, 36*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
 
-	//Render wireframes
+	// Render wireframes
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, swBuffer);
     gl.drawElements(gl.LINES, 24*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
 
@@ -648,7 +722,7 @@ function CheckCollision(eye, vectors) {
         && -1.0 < newCoords[2] && newCoords[2] < 1.0) {
 
         if(vectors[0] != 0.0) {
-            var xCollisionBlock = GetCell([newCoords[0], eye[1], eye[2]]);
+            var xCollisionBlock = getBlock([newCoords[0], eye[1], eye[2]]);
             if(xCollisionBlock.appearance == "Solid")
                 axisCollision[0] = 0.0;
         }
@@ -656,13 +730,13 @@ function CheckCollision(eye, vectors) {
         if(vectors[1] !=0.0) {
             if(newCoords[1] > 1.0)
                 newCoords[1] = 1.0;
-            var yCollisionBlock = GetCell([eye[0], newCoords[1], eye[2]]);
+            var yCollisionBlock = getBlock([eye[0], newCoords[1], eye[2]]);
             if(yCollisionBlock.appearance == "Solid")
                 axisCollision[1] = 0.0;
         }
 
         if(vectors[2] != 0.0) {
-            var zCollisionBlock = GetCell([eye[0], eye[1], newCoords[2]]);
+            var zCollisionBlock = getBlock([eye[0], eye[1], newCoords[2]]);
             if(zCollisionBlock.appearance == "Solid")
                 axisCollision[2] = 0.0;
         }
@@ -671,7 +745,7 @@ function CheckCollision(eye, vectors) {
     return axisCollision;
 }
 
-function GetCell(vec) {
+function getBlock(vec) {
     var blockWidth = 2/worldWidth;
     var blockHeight = 2/worldHeight;
     var blockDepth = 2/worldDepth;
@@ -694,4 +768,99 @@ function GetCell(vec) {
     var zBlockPos = zBlockNumber*worldWidth*worldHeight;
 
     return blockArray[xBlockPos + yBlockPos + zBlockPos];
+}
+
+function getCell(vec) {
+    var blockWidth = 2/worldWidth;
+    var blockHeight = 2/worldHeight;
+    var blockDepth = 2/worldDepth;
+
+    xBlockNumber = Math.floor((vec[0]+1)/blockWidth);
+    yBlockNumber = Math.floor((vec[1]+1)/blockHeight);
+    zBlockNumber = Math.floor((vec[2]+1)/blockDepth);
+
+    if (xBlockNumber > 9)
+        xBlockNumber = 9;
+
+    if (yBlockNumber > 9)
+        yBlockNumber = 9;
+
+    if (zBlockNumber > 9)
+        zBlockNumber = 9;
+
+    var xBlockPos = xBlockNumber;
+    var yBlockPos = yBlockNumber*worldWidth;
+    var zBlockPos = zBlockNumber*worldWidth*worldHeight;
+
+    return xBlockPos + yBlockPos + zBlockPos +1;
+}
+
+function doPicking()
+{	
+	var color = new Uint8Array(4);
+	
+    gl.bindBuffer(gl.ARRAY_BUFFER, contColBuffer);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+	
+	// Prepare the framebuffer for drawing
+	gl.bindFramebuffer(gl.FRAMEBUFFER, pickFramebuffer);
+	gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	var x = prevMousePosition[0];
+	var y = canvas.height - prevMousePosition[1];
+	
+	// Draw the framebuffer (offscreen)
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
+	gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
+    gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix))
+
+	//Render boxes
+    gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
+	gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
+
+	// Revert to usual drawing
+	gl.bindTexture(gl.TEXTURE_2D, null);
+	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	return color;
+}
+
+//Convert byte colors (from picking) to a clip coord vector
+function colorToGrid(color)
+{
+	var x = (((color[0] / 255)*2) - 1);
+	var y = (((color[1] / 255)*2) - 1);
+	var z = (((color[2] / 255)*2) - 1);
+	
+	return vec3(x,y,z);
+}
+
+function doPickFace()
+{
+	var color = new Uint8Array(4);
+
+	var x = prevMousePosition[0];
+	var y = canvas.height - prevMousePosition[1];
+	
+	gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
+	
+    gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
+	
+	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+
+    gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
+	
+	//Render boxes
+    gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
+
+	return color;
 }
