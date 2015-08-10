@@ -39,6 +39,8 @@ var centerPos = [];
 var pickFramebuffer;
 var pickDepthBuffer;
 var pickTexture;
+var selectionWireframe = [];
+var selectionBuffer;
 
 // View variables
 var fovy = 72.0;
@@ -163,7 +165,11 @@ window.onload = function Init() {
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(), gl.STATIC_DRAW);
 
 	swBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, swBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(), gl.STATIC_DRAW);
+	
+	selectionBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, selectionBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(), gl.STATIC_DRAW);
 	
 	// Center of each box, for every vertice
@@ -485,7 +491,11 @@ function AddEvents()
 		}
 		
 		//Show wireframe of targetted area
-		
+		var face = doPickFace();
+		var blockPos = colorToGrid(doPicking());
+		var pos = faceToPos(face, blockPos)
+		var cell = getCell(pos);
+		changeAddWireframe(cell);
     });
 
     iP.addEventListener("mousedown", function(event) {
@@ -553,19 +563,17 @@ function AddEvents()
 		// Adding and removing blocks with pickings
 		if (event.keyCode == "81") // Q
 		{
-			var block = colorToGrid(doPicking());
-			var cell = getCell(block);
+			var blockPos = colorToGrid(doPicking());
+			var cell = getCell(blockPos);
 			// Remove block at pick location
 			removeSelectedBlock(cell);
 		}
 		if (event.keyCode == "69") // E
 		{
 			var face = doPickFace();
-			var block = colorToGrid(doPicking());
-			var pos = faceToPos(face, block)
+			var blockPos = colorToGrid(doPicking());
+			var pos = faceToPos(face, blockPos)
 			var cell = getCell(pos);
-			console.log(block);
-			console.log(pos);
 			// Add block at pick location
 			var blockType = sel.value;
 			addSelectedBlock(cell, blockType, assignBlockAppearance(blockType));
@@ -644,9 +652,14 @@ function Render()
     gl.uniform4f(wireframeLoc, 0.0, 0.0, 0.0, 1.0);
     gl.drawElements(gl.LINES, 24*numberOfActiveBlocks, gl.UNSIGNED_SHORT, 2*(iIndices.length - 24*numberOfActiveBlocks));
 
+	//Render cell that can be added a block to
+	if(selectionWireframe.length == 24)
+	{
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, selectionBuffer);
+		gl.drawElements(gl.LINES, 24, gl.UNSIGNED_SHORT, 0);
+	}
 
 	//Render small blocks
-    gl.uniform4f(wireframeLoc, 1.0, 1.0, 1.0, 1.0);
 	renderSmallBlocks();
 	
     window.requestAnimFrame(Render);
@@ -661,10 +674,12 @@ function renderSmallBlocks()
 	
 	// Render boxes
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, sBuffer);
-    gl.drawElements(gl.TRIANGLES, 36*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
+    gl.uniform4f(wireframeLoc, 1.0, 1.0, 1.0, 1.0);
+	gl.drawElements(gl.TRIANGLES, 36*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
 
 	// Render wireframes
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, swBuffer);
+	gl.uniform4f(wireframeLoc, 0.0, 0.0, 0.0, 1.0);
     gl.drawElements(gl.LINES, 24*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
 
 	
@@ -774,7 +789,6 @@ function removeSelectedBlock(blockNumber) {
 
     blocksPositionsInBuffer.splice(blockPos,1);
 	
-
     blockArray[blockNumber-1].blockType = "Air";
     blockArray[blockNumber-1].appearance = "Air";
 
@@ -979,6 +993,7 @@ function doPicking()
 	gl.bindTexture(gl.TEXTURE_2D, null);
 	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.uniform1i(pick, 0);
 	
 	gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
@@ -1026,6 +1041,7 @@ function doPickFace()
 	gl.bindTexture(gl.TEXTURE_2D, null);
 	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	gl.uniform1i(pick, 0);
 
 	return color;
 }
@@ -1063,4 +1079,15 @@ function faceToPos(color, block)
 		block[axis] -= 2/worldSize[axis];
 	}
 	return block;
+}
+
+function changeAddWireframe(block)
+{
+    var wIndex = 36*(numberOfBlocks) + 24*(block-1);
+	selectionWireframe = [];
+    for (var i = 0 ; i < 24 ; i++) {
+        selectionWireframe.push(wIndex + i);
+    }	
+	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, selectionBuffer);
+	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(selectionWireframe), gl.STATIC_DRAW);
 }
