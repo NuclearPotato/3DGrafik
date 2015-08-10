@@ -6,8 +6,10 @@
 attribute vec4 vPosition;
 attribute vec4 vColor;
 attribute vec4 cPosition;
+attribute vec2 vTexCoord;
 
 varying vec4 fColor;
+varying vec2 fTexCoord;
 
 uniform mat4 projectionMatrix;
 uniform mat4 sBRotationMatrix;
@@ -21,6 +23,7 @@ void main()
 	tPos = tPos + cPosition;
 	
 	fColor = vColor;
+	fTexCoord = vTexCoord;
 	gl_Position = projectionMatrix * modelView * tPos;
 
 	//modelView * po
@@ -31,10 +34,14 @@ void main()
 precision mediump float;
 
 varying vec4 fColor;
+varying vec2 fTexCoord;
+
+uniform sampler2D texMap;
+uniform vec4 wireframe;
+
 void main()
 {
-
-    gl_FragColor = fColor;
+    gl_FragColor = texture2D(texMap, fTexCoord) * wireframe;
 
 }
 </script>
@@ -44,6 +51,8 @@ void main()
 <script type="text/javascript" src="Common/MV.js"></script>
 <script type="text/javascript" src="Common/debug/webgl-debug.js"></script>
 <script type="text/javascript" src="MinecraftBackend.js"></script>
+<img id="texImage" src="Textures/cubesTextures.png" hidden>
+
 
 <body>
 	<div id="canvasPanel">

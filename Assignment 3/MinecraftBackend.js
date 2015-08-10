@@ -8,6 +8,7 @@ var program;
 var deleteBlock = false;
 var addBlock = false;
 var mousePressed = false;
+var cubesTextures;
 
 // World grid variables
 var worldGrid = [];
@@ -21,11 +22,10 @@ var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 // Buffer arrays
 var blockArray = [];
 var blocksPositionsInBuffer = [];
-var vBuffer, cBuffer, iBuffer, sBuffer, swBuffer, centBuffer;
+var vBuffer, newVBuffer, cBuffer, cubeVBuffer,iBuffer, sBuffer, swBuffer, centBuffer;
 var iIndex = 0;
 var iIndices = [];
-var colorArray = [];
-var pointArray = [];
+var newPointArray = [];
 
 var removedBlocks = [];
 var sIndices = [];
@@ -39,6 +39,7 @@ var near = 0.001;
 var far = 1000.0;
 var colorArray = [];
 var pointArray = [];
+var texCoordsArray = [];
 
 var mapView;
 
@@ -48,29 +49,19 @@ var rotMatrix; //Rotate the point we look at
 var eye = vec3(0.0,1.2,-0.5);
 var at = vec3(0.0,1.2,2.0);
 const up = vec3(0.0, 1.0, 0.0);
+var speed = 0;
+var lastTime = 0;
+
 
 // Shader related variables
-var projectionLoc, modelView;
+var modelView;
 var sBR;
 
 // Uniform variable locations
-var thetaLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix;
+var wireframeLoc, texMapLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix;
 
 // Shader attributes locations
-var vPosition, vColor, cPosition;
-
-//Block material colors
-var colors = [
-    vec4(0.8, 0.8, 1.0, 1.0), // Air
-    vec4(0.7, 0.5, 0.0, 1.0), // Dirt
-    vec4(0.0, 0.8, 0.0, 1.0), // Grass
-    vec4(0.8, 0.0, 0.0, 1.0), // Lava
-    vec4(0.5, 0.5, 0.5, 1.0), // Stone
-    vec4(0.8, 0.8, 0.8, 1.0), // Metal
-    vec4(0.1, 0.3, 0.8, 1.0), // Water
-    vec4(0.0, 0.0, 0.0, 1.0), // Border color
-    vec4(0.0, 0.0, 0.0, 1.0)  // Stickman color
-];
+var vPosition, vColor, cPosition, vTexCoord;
 
 // The block function object
 function Block(blockType, vecIndices, appearance)
@@ -98,8 +89,10 @@ window.onload = function Init() {
     // Initialize the coordinate system
     //initializeCoordSystem(worldWidth,worldHeight);
     Initialize3DCoordSystem(worldWidth, worldHeight, worldDepth);
+    initTextures();
     HandleBufferContent();
     updateWireframe();
+
 
     // Load shaders
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
@@ -109,12 +102,16 @@ window.onload = function Init() {
     projectionLoc = gl.getUniformLocation(program, "projectionMatrix");
     sBRotationMatrix = gl.getUniformLocation(program, "sBRotationMatrix");
     modelViewLoc = gl.getUniformLocation(program, "modelView");
+    texMapLoc = gl.getUniformLocation(program, "texMaps");
+    wireframeLoc = gl.getUniformLocation(program, "wireframe");
 
     // Attribute resource locations
 	vPosition = gl.getAttribLocation( program, "vPosition");
 	vColor = gl.getAttribLocation( program, "vColor");
 	cPosition = gl.getAttribLocation( program, "cPosition");
-		
+    vTexCoord = gl.getAttribLocation( program, "vTexCoord");
+
+
 	// Initial buffer creation and initial attribute assignment
     vBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
@@ -122,11 +119,30 @@ window.onload = function Init() {
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
 
+    newVBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, newVBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(newPointArray), gl.STATIC_DRAW);
+    //gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+    //gl.enableVertexAttribArray(vPosition);
+
     cBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(colorArray), gl.STATIC_DRAW );
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vColor);
+
+
+    cubeVBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vTexCoord);
+
+    console.log(texCoordsArray.length);
+    console.log(pointArray.length);
+
+    //cubeVBuffer.itemSize = 2;
+    //cubeVBuffer.numItems = 24;
 
     iBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
@@ -185,13 +201,8 @@ function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
                 worldGrid.push(vertice);
 
                 if(z != depthSize && y != rowSize && x != columnSize) {
-
-
-
                     var newBlock = createBlock(x, y, z);
                     blockArray.push(newBlock);
-
-
                 }
             }
         }
@@ -200,10 +211,25 @@ function Initialize3DCoordSystem(columnSize, rowSize, depthSize)
 
 function createBlock(x, y, z) {
 
-    if (y == 9)
+
+    if (y == 0) {
+        blocksPositionsInBuffer.push(blockArray.length);
+        numberOfActiveBlocks++;
+        return new Block("Bedrock", getBlockVertices(x, y, z), "Solid");
+    }
+
+    if (y >= worldHeight-2)
         return new Block("Air", getBlockVertices(x, y, z), "Air");
+
     blocksPositionsInBuffer.push(blockArray.length);
     numberOfActiveBlocks++;
+
+    if (x >= worldWidth*0.8 && z >= worldDepth*0.8)
+        return new Block("Water", getBlockVertices(x, y, z), "Liquid");
+
+    if (x >= worldWidth*0.8 && z >= worldDepth*0.3)
+        return new Block("Stone", getBlockVertices(x, y, z), "Solid");
+
     return new Block("Dirt", getBlockVertices(x, y, z), "Solid");
 
 }
@@ -221,6 +247,22 @@ function getBlockVertices(x, y, z) {
     return [x0y0z0, x1y0z0, x0y1z0, x1y1z0, x0y0z1, x1y0z1, x0y1z1, x1y1z1];
 }
 
+function initTextures() {
+    var image = document.getElementById("texImage");
+
+    cubesTextures = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, cubesTextures);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    //gl.generateMipmap(gl.TEXTURE_2D);
+    //console.log(cubesTextures);
+
+    gl.uniform1i(texMapLoc, 0);
+
+    // gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+}
 
 function HandleBufferContent() {
 
@@ -239,25 +281,29 @@ function HandleBufferContent() {
         handleTrianglePointsAndColor(entry, 1, 3, 1);
         handleTrianglePointsAndColor(entry, 2, 1, 3);
         handleTrianglePointsAndColor(entry, 3, 3, 1);
-		
+
+        var mapPos = getTexMapLocation(entry.blockType);
+
+        for (var i = 0 ; i < 6 ; i++) {
+            handleTexPoints(mapPos[1], mapPos[0], mapPos[2]);
+            handleTexPoints(mapPos[0], mapPos[2], mapPos[3]);
+        }
 		corner1 = worldGrid[entry.vecIndices[0]];
 		corner2 = worldGrid[entry.vecIndices[7]];
 		centerP = mix(corner1, corner2, 0.5);
 	
-		for(var i = 0; i < 36; i++)
+		for(var j = 0; j < 36; j++)
 		{
 			centerPos.push(centerP);
 		}
-		
     });
+    //console.log(texCoordsArray);
 }
 
 function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncrease) {
     var p1 = worldGrid[block.vecIndices[start]];
     var p2 = worldGrid[block.vecIndices[start + firstIncrease]];
     var p3 = worldGrid[block.vecIndices[start + firstIncrease + secondIncrease]];
-
-
 
     var normalColor = AddColor(p1, p2, p3);
 
@@ -273,9 +319,15 @@ function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncreas
         iIndices.push(iIndex+1);
         iIndices.push(iIndex+2);
     }
-
     iIndex += 3;
 }
+function handleTexPoints(p1, p2, p3) {
+
+    texCoordsArray.push(p1);
+    texCoordsArray.push(p2);
+    texCoordsArray.push(p3);
+}
+
 
 function updateWireframe()
 {
@@ -304,7 +356,7 @@ function updateWireframe()
 			{
 				centerPos.push(centerP);
 				colorArray.push(frameColor);
-
+                texCoordsArray.push([]);
                 if (entry.appearance != "Air") {
                     iIndices.push(iIndex + i);
                 }
@@ -401,6 +453,7 @@ function AddEvents()
             eye = add(eye, move);
         }
         if (event.keyCode == "87" && !mapView) { //W
+
             move = subtract(at, eye);
             move[1] = 0.0;
             move = normalize(move);
@@ -424,8 +477,7 @@ function AddEvents()
             at = add(at, move);
             eye = add(eye, move);
         }
-		if (event.keyCode == "9" || event.keyCode == "77")
-		{
+        if (event.keyCode == "9" || event.keyCode == "77") {
 			mapView = !mapView;
 		}
 		updateView();
@@ -457,18 +509,18 @@ function Render()
 
     if (addBlock) {
 
-        addSelectedBlock(983);
-        addSelectedBlock(986);
-        addSelectedBlock(985);
-        addSelectedBlock(783);
-        addSelectedBlock(784);
-        addSelectedBlock(785);
-        addSelectedBlock(683);
-        addSelectedBlock(684);
-        addSelectedBlock(685);
-        addSelectedBlock(583);
-        addSelectedBlock(584);
-        addSelectedBlock(585);
+        addSelectedBlock(983, "Dirt", "Solid");
+        addSelectedBlock(986, "Dirt", "Solid");
+        addSelectedBlock(985, "Stone", "Solid");
+        addSelectedBlock(783, "Stone", "Solid");
+        addSelectedBlock(784, "Stone", "Solid");
+        addSelectedBlock(785, "Stone", "Solid");
+        addSelectedBlock(683, "Stone", "Solid");
+        addSelectedBlock(684, "Stone", "Solid");
+        addSelectedBlock(685, "Stone", "Solid");
+        addSelectedBlock(583, "Dirt", "Solid");
+        addSelectedBlock(584, "Dirt", "Solid");
+        addSelectedBlock(585, "Dirt", "Solid");
 
         addBlock = false;
     }
@@ -476,21 +528,28 @@ function Render()
     handleGravity();
 
     gl.uniformMatrix4fv(modelViewLoc, false, flatten(mvMatrix));
-	
     gl.uniformMatrix4fv(projectionLoc, false, flatten(projectionMatrix));
-	
 	gl.uniformMatrix4fv(sBRotationMatrix, false, flatten(mat4()));
-	
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+    //gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
 
 	//Render boxes
+    //gl.drawArrays( gl.TRIANGLES, 0, 3600);
+    gl.uniform4f(wireframeLoc, 1.0, 1.0, 1.0, 1.0);
     gl.drawElements(gl.TRIANGLES, iIndices.length - (24*numberOfActiveBlocks), gl.UNSIGNED_SHORT, 0);
 
-	//Render wireframes
+
+  //  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
+
+
+    //Render wireframes
+    gl.uniform4f(wireframeLoc, 0.0, 0.0, 0.0, 1.0);
     gl.drawElements(gl.LINES, 24*numberOfActiveBlocks, gl.UNSIGNED_SHORT, 2*(iIndices.length - 24*numberOfActiveBlocks));
 
+
 	//Render small blocks
+    gl.uniform4f(wireframeLoc, 1.0, 1.0, 1.0, 1.0);
 	renderSmallBlocks();
 	
     window.requestAnimFrame(Render);
@@ -524,6 +583,52 @@ function handleGravity() {
     at = add(at, newY);
     eye = add(eye, newY);
     updateView();
+}
+
+function getTexMapLocation(blockType) {
+
+
+    var blockPos = getBlockPosOnTexMap(blockType);
+
+
+    xPosOnTexMap = blockPos % 16;
+    yPosOnTexMap = Math.floor(blockPos/16);
+
+    //console.log(xPosOnTexMap + "  " + yPosOnTexMap);
+
+    var texCoord = [
+        vec2(xPosOnTexMap/16, (16-yPosOnTexMap-1)/16),
+        vec2(xPosOnTexMap/16, (16-yPosOnTexMap)/16),
+        vec2((xPosOnTexMap+1)/16, (16-yPosOnTexMap)/16),
+        vec2((xPosOnTexMap+1)/16, (16-yPosOnTexMap-1)/16)
+    ];
+    //console.log(texCoord);
+
+
+    return texCoord;
+}
+
+function getBlockPosOnTexMap(blockType) {
+
+    switch (blockType) {
+        case "Air" :
+            return 0;
+            break;
+        case "Bedrock" :
+            return 17;
+            break;
+        case "Dirt" :
+            return 2;
+            break;
+        case "Stone" :
+            return 1;
+            break;
+        case "Water" :
+            return 205;
+            break;
+    }
+
+    return 2;
 }
 
 //Returns the color of the given blockType, calculated out from the norm of the plane
@@ -593,7 +698,7 @@ function removeSelectedBlock(blockNumber) {
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(swIndices), gl.STATIC_DRAW);
 }
 
-function addSelectedBlock(blockNumber) {
+function addSelectedBlock(blockNumber, blockType, blockAppearance) {
 
     var pointStartIndex = 36*numberOfActiveBlocks;
     var wireframeStartIndex = 36*numberOfActiveBlocks + 24*numberOfActiveBlocks;
@@ -607,6 +712,17 @@ function addSelectedBlock(blockNumber) {
     for (var j = 0 ; j < 36 ; j++) {
         iIndices.splice(pointStartIndex + j, 0, pIndex + j);
     }
+
+    blockArray[blockNumber-1].blockType = blockType;
+    blockArray[blockNumber-1].appearance = blockAppearance;
+
+    var mapPos = getTexMapLocation(entry.blockType);
+
+    for (var i = 0 ; i < 6 ; i++) {
+        handleTexPoints(mapPos[1], mapPos[0], mapPos[2]);
+        handleTexPoints(mapPos[0], mapPos[2], mapPos[3]);
+    }
+
 
     blocksPositionsInBuffer[numberOfActiveBlocks] = blockNumber-1;
 
@@ -648,7 +764,9 @@ function CheckCollision(eye, vectors) {
         && -1.0 < newCoords[2] && newCoords[2] < 1.0) {
 
         if(vectors[0] != 0.0) {
+
             var xCollisionBlock = GetCell([newCoords[0], eye[1], eye[2]]);
+            //console.log(xCollisionBlock);
             if(xCollisionBlock.appearance == "Solid")
                 axisCollision[0] = 0.0;
         }
@@ -658,7 +776,9 @@ function CheckCollision(eye, vectors) {
                 newCoords[1] = 1.0;
             var yCollisionBlock = GetCell([eye[0], newCoords[1], eye[2]]);
             if(yCollisionBlock.appearance == "Solid")
-                axisCollision[1] = 0.0;
+                axisCollision[1] = 0.0
+            if(yCollisionBlock.appearance == "Liquid")
+                axisCollision[1] = 0.1;
         }
 
         if(vectors[2] != 0.0) {
@@ -680,18 +800,18 @@ function GetCell(vec) {
     yBlockNumber = Math.floor((vec[1]+1)/blockHeight);
     zBlockNumber = Math.floor((vec[2]+1)/blockDepth);
 
-    if (xBlockNumber > 9)
-        xBlockNumber = 9;
+    if (xBlockNumber > worldWidth-1)
+        xBlockNumber = worldWidth-1;
 
-    if (yBlockNumber > 9)
-        yBlockNumber = 9;
+    if (yBlockNumber > worldHeight-1)
+        yBlockNumber = worldHeight-1;
 
-    if (zBlockNumber > 9)
-        zBlockNumber = 9;
+    if (zBlockNumber > worldDepth-1)
+        zBlockNumber = worldDepth-1;
 
     var xBlockPos = xBlockNumber;
     var yBlockPos = yBlockNumber*worldWidth;
     var zBlockPos = zBlockNumber*worldWidth*worldHeight;
-
+    //console.log(xBlockPos + yBlockPos + zBlockPos);
     return blockArray[xBlockPos + yBlockPos + zBlockPos];
 }
