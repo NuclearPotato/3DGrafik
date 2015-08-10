@@ -175,7 +175,7 @@ window.onload = function Init() {
 	pickFramebuffer = gl.createFramebuffer();
 	gl.bindFramebuffer( gl.FRAMEBUFFER, pickFramebuffer);
 	pickFramebuffer.width = 1024;
-    pickFramebuffer.height = 512;
+    pickFramebuffer.height = 1024;
 	
 	pickDepthBuffer = gl.createRenderbuffer();
 	gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
@@ -548,8 +548,8 @@ function AddEvents()
 		{
 			var block = doPicking();
 			var cell = getCell(colorToGrid(block));
-			console.log(cell);
-			removeSelectedBlock(cell);
+			console.log(block);
+			//removeSelectedBlock(cell);
 			// Add block at pick location
 		}
 		if (event.keyCide == "69") // E
@@ -607,6 +607,8 @@ function Render()
         addSelectedBlock(585, "Dirt", "Solid");
         addBlock = false;
     }
+	
+	gl.bindTexture(gl.TEXTURE_2D, cubesTextures);
 	
     handleGravity();
 	
@@ -938,6 +940,7 @@ function doPicking()
 	// Prepare the framebuffer for drawing
 	gl.bindFramebuffer(gl.FRAMEBUFFER, pickFramebuffer);
 	gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
+	gl.bindTexture(gl.TEXTURE_2D, pickTexture);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	
 	var x = prevMousePosition[0];
