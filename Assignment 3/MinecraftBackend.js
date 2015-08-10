@@ -438,6 +438,8 @@ function AddEvents()
 {
     var bP = document.getElementById("gl-canvas");
     var iP = document.getElementById("inputPanel");
+	var sel = document.getElementById("blockMenu");
+	
 
     bP.addEventListener("mousedown", function(event) {
         prevMousePosition = vec2(event.clientX, event.clientY);
@@ -481,6 +483,9 @@ function AddEvents()
 		{
 			prevMousePosition = vec2(event.clientX, event.clientY);
 		}
+		
+		//Show wireframe of targetted area
+		
     });
 
     iP.addEventListener("mousedown", function(event) {
@@ -562,8 +567,8 @@ function AddEvents()
 			console.log(block);
 			console.log(pos);
 			// Add block at pick location
-			addSelectedBlock(cell, "Stone", "Solid");
-			//removeSelectedBlock(cell);
+			var blockType = sel.value;
+			addSelectedBlock(cell, blockType, assignBlockAppearance(blockType));
 		}
 		// Change to ortho top-down mapview
         if (event.keyCode == "9" || event.keyCode == "77") 
@@ -768,6 +773,7 @@ function removeSelectedBlock(blockNumber) {
     var wireframeStartIndex = 36*numberOfActiveBlocks + 24*(blockPos);
 
     blocksPositionsInBuffer.splice(blockPos,1);
+	
 
     blockArray[blockNumber-1].blockType = "Air";
     blockArray[blockNumber-1].appearance = "Air";
