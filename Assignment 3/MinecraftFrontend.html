@@ -59,7 +59,7 @@ uniform vec4 moonDiffuse, moonSpecular;
 uniform vec4 torchDiffuse, torchSpecular;
 uniform float shininess;
 
-vec4 doLighting(vec4 L,vec4 diffuseProduct, vec4 specularProduct)
+vec4 doLighting(vec4 L, vec4 diffuseProduct, vec4 specularProduct, float att)
 {
 	vec4 H = normalize(L + E);
 	// Diffuse
@@ -72,16 +72,19 @@ vec4 doLighting(vec4 L,vec4 diffuseProduct, vec4 specularProduct)
 	{
 		specular = vec4(0.0, 0.0, 0.0, 1.0);
     }
-	return diffuse +specular;
+	
+	float attenuation = 1.0 / (1.0 + att * pow(length(L.xyz), 2.0));
+	
+	return attenuation*(diffuse + specular);
 }
 
 void main()
 {
 	if(pick == 0)
 	{
-		vec4 lColor = ambientProduct + doLighting(sunL, sunDiffuse, sunSpecular);
-		lColor = lColor + doLighting(moonL, moonDiffuse, moonSpecular);
-		lColor = lColor + doLighting(torchL, torchDiffuse, torchSpecular);
+		vec4 lColor = ambientProduct + doLighting(sunL, sunDiffuse, sunSpecular, 1.0);
+		lColor = lColor + doLighting(moonL, moonDiffuse, moonSpecular, 1.0);
+		lColor = lColor + doLighting(torchL, torchDiffuse, torchSpecular, 1.5);
 		lColor.a = 1.0;
 		gl_FragColor = (lColor * (texture2D(texMap, fTexCoord))) * wireframe;
 	}
