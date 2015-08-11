@@ -22,8 +22,8 @@ var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 // Buffer arrays
 var blockArray = [];
 var blocksPositionsInBuffer = [];
-var vBuffer, cBuffer, iBuffer, sBuffer,
-swBuffer, centBuffer, contColBuffer, nBuffer, newVBuffer, cubeVBuffer;
+var vBuffer, cBuffer, iBuffer, sBuffer, 
+swBuffer, centBuffer, centColBuffer, nBuffer, newVBuffer, cubeVBuffer;
 
 // Light Buffers
 var lightVBuffer, nLightBuffer, cLightBuffer, cubeVLightBuffer, centLightBuffer;
@@ -263,8 +263,8 @@ window.onload = function Init() {
 	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	
-	contColBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, contColBuffer);
+	centColBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, centColBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, flatten(centerColor), gl.STATIC_DRAW); 
 	
 	// Prepare rotation matrix for small-blocks
@@ -1143,7 +1143,7 @@ function doPicking()
 {	
 	var color = new Uint8Array(4);
 	
-    gl.bindBuffer(gl.ARRAY_BUFFER, contColBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, centColBuffer);
     gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
 	
 	// Prepare the framebuffer for drawing
