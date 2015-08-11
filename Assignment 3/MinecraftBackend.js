@@ -473,8 +473,8 @@ function HandleBufferContent()
 	{
         handleTrianglePointsAndColor(entry, 0, 1, 2);
         handleTrianglePointsAndColor(entry, 1, 3, 2);
-        handleTrianglePointsAndColor(entry, 5, 4, 6);
-        handleTrianglePointsAndColor(entry, 5, 6, 7);
+        handleTrianglePointsAndColor(entry, 5, 4, 7);
+        handleTrianglePointsAndColor(entry, 4, 6, 7);
 
         handleTrianglePointsAndColor(entry, 4, 0, 6);
         handleTrianglePointsAndColor(entry, 0, 2, 6);
@@ -1013,11 +1013,11 @@ function addSelectedBlock(blockNumber, blockType, blockAppearance) {
 
     for (var k = 0 ; k < 6 ; k++) {
         texCoordsArray[36*(blockNumber-1) + 6*k] = mapPos[1];
-        texCoordsArray[36*(blockNumber-1) + 1 + 6*k] = mapPos[0];
-        texCoordsArray[36*(blockNumber-1) + 2 + 6*k] = mapPos[2];
-        texCoordsArray[36*(blockNumber-1) + 3 + 6*k] = mapPos[0];
-        texCoordsArray[36*(blockNumber-1) + 4 + 6*k] = mapPos[2];
-        texCoordsArray[36*(blockNumber-1) + 5 + 6*k] = mapPos[3];
+        texCoordsArray[36*(blockNumber-1) + 1 + 6*k] = mapPos[2];
+        texCoordsArray[36*(blockNumber-1) + 2 + 6*k] = mapPos[0];
+        texCoordsArray[36*(blockNumber-1) + 3 + 6*k] = mapPos[2];
+        texCoordsArray[36*(blockNumber-1) + 4 + 6*k] = mapPos[3];
+        texCoordsArray[36*(blockNumber-1) + 5 + 6*k] = mapPos[0];
     }
 
     blocksPositionsInBuffer[numberOfActiveBlocks] = blockNumber-1;
