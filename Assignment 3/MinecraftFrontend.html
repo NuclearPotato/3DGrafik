@@ -79,7 +79,7 @@ void main()
 {
 	if(pick == 0)
 	{
-		gl_FragColor = (lColor + texture2D(texMap, fTexCoord)) * wireframe;
+		gl_FragColor = (lColor + texture2D(texMap, fTexCoord) - wireframe) * wireframe;
 	}
 	else
 	{

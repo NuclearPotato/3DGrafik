@@ -65,15 +65,20 @@ var speed = 0;
 var lastTime = 0;
 
 // Lighting variables
-var lightPosition = vec4(2.0, 2.0, 0.0, 0.0 );
-var lightAmbient = vec4(0.1, 0.1, 0.1, 1.0 );
-var lightDiffuse = vec4( 0.2, 0.2, 0.2, 1.0 );
-var lightSpecular = vec4( 0.3, 0.3, 0.3, 1.0 );
+var sunPosition = vec4(10.0, 10.0, 10.0, 1.0 );
+var sunAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var sunDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
+var sunSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
 
-var materialAmbient = vec4( 0.0, 0.0, 0.0, 1.0 );
+var moonPosition = vec4(-10.0, -10.0, -10.0, 1.0 );
+var moonAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
+var moonDiffuse = vec4( 0.2, 0.2, 0.2, 1.0 );
+var moonSpecular = vec4( 0.3, 0.3, 0.3, 1.0 );
+
+var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialDiffuse = vec4( 1.0, 1.0, 1.0, 1.0);
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 20.0;
+var materialShininess = 1.0;
 
 // Shader related variables
 var modelView;
@@ -251,14 +256,14 @@ window.onload = function Init() {
 	updateView();
 	
 		// Prepare lighting effects
-    ambientProduct = mult(lightAmbient, materialAmbient);
-    diffuseProduct = mult(lightDiffuse, materialDiffuse);
-    specularProduct = mult(lightSpecular, materialSpecular);
+    ambientProduct = mult(sunAmbient, materialAmbient);
+    diffuseProduct = mult(sunDiffuse, materialDiffuse);
+    specularProduct = mult(sunSpecular, materialSpecular);
 	
     gl.uniform4fv(ambientProductLoc, flatten(ambientProduct) );
     gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct) );
     gl.uniform4fv(specularProductLoc, flatten(specularProduct) );	
-    gl.uniform4fv(lightPositionLoc, flatten(lightPosition) );
+    gl.uniform4fv(lightPositionLoc, flatten(sunPosition) );
     gl.uniform1f(shininessLoc,  materialShininess);
 	
     //Adds eventListeners
