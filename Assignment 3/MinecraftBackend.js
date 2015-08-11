@@ -22,8 +22,11 @@ var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 // Buffer arrays
 var blockArray = [];
 var blocksPositionsInBuffer = [];
-var vBuffer, cBuffer, iBuffer, sBuffer, 
+var vBuffer, cBuffer, iBuffer, sBuffer,
 swBuffer, centBuffer, contColBuffer, nBuffer, newVBuffer, cubeVBuffer;
+
+// Light Buffers
+var lightVBuffer, nLightBuffer, cLightBuffer, cubeVLightBuffer, centLightBuffer;
 var iIndex = 0;
 var iIndices = [];
 var newPointArray = [];
@@ -52,6 +55,8 @@ var far = 1000.0;
 var colorArray = [];
 var pointArray = [];
 var texCoordsArray = [];
+var lightPointArray = [];
+var lightColorArray = [];
 
 var mapView;
 
@@ -72,16 +77,16 @@ var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialShininess = 100.0;
 
 var sunPosition = vec4(10.0, 0.0, 0.0, 1.0 );
-var sunDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
-var sunSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
+var sunDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var sunSpecular = vec4( 0.2, 0.2, 0.2, 1.0 );
 
 var moonPosition = vec4(-10.0, -10.0, -10.0, 1.0 );
 var moonDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
 var moonSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
 
 var torchPosition = vec3(0.0, 0.0, 0.0, 1.0 );
-var torchDiffuse = vec4( 0.4, 0.4, 0.4, 1.0 );
-var torchSpecular = vec4( 0.2, 0.2, 0.2, 1.0 );
+var torchDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
+var torchSpecular = vec4( 0.3, 0.3, 0.3, 1.0 );
 
 // Shader related variables
 var modelView;
@@ -118,7 +123,7 @@ window.onload = function Init() {
     
     gl.viewport( 0, 0, canvas.width, canvas.height );
     aspect = canvas.width/canvas.height;
-    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
+    gl.clearColor( 0.8, 0.8, 0.8, 1.0 );
     gl.clear( gl.COLOR_BUFFER_BIT );
 
     gl.enable(gl.DEPTH_TEST);
@@ -128,9 +133,13 @@ window.onload = function Init() {
     //initializeCoordSystem(worldWidth,worldHeight);
     Initialize3DCoordSystem(worldWidth, worldHeight, worldDepth);
     initTextures();
+    InitLightObjects();
     HandleBufferContent();
+    HandlerLightBuffers();
     updateWireframe();
-	
+
+
+
     // Load shaders
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
@@ -197,12 +206,6 @@ window.onload = function Init() {
     gl.bufferData(gl.ARRAY_BUFFER, flatten(texCoordsArray), gl.STATIC_DRAW);
     gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vTexCoord);
-
-    console.log(texCoordsArray.length);
-    console.log(pointArray.length);
-
-    //cubeVBuffer.itemSize = 2;
-    //cubeVBuffer.numItems = 24;
 
     iBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, iBuffer);
@@ -383,12 +386,87 @@ function initTextures() {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    //gl.generateMipmap(gl.TEXTURE_2D);
-    //console.log(cubesTextures);
 
     gl.uniform1i(texMapLoc, 0);
 
-    // gl.uniform1i(gl.getUniformLocation(program, "texture"), 0);
+}
+
+function InitLightObjects() {
+
+    sunPos = getLightObjectPos(sunPosition);
+    moonPos = getLightObjectPos(moonPosition);
+    pushObjectToArray(sunPos);
+    pushObjectToArray(moonPos);
+
+    for (var i = 0 ; i < 36 ; i++) {
+        lightColorArray.push(vec4(1.0, 1.0, 0.0, 1.0));
+    }
+
+    for (var j = 0 ; j < 36 ; j++) {
+        lightColorArray.push(vec4(0.5, 0.5, 0.5, 1.0));
+    }
+}
+
+function getLightObjectPos(objectPos) {
+    var objectPosX = objectPos[0];
+    var objectPosY = objectPos[1];
+    var objectPosZ = objectPos[2];
+
+    var x0y0z0 = [objectPosX-0.5, objectPosY-0.5, objectPosZ-0.5];
+    var x1y0z0 = [objectPosX+0.5, objectPosY-0.5, objectPosZ-0.5];
+    var x0y1z0 = [objectPosX-0.5, objectPosY+0.5, objectPosZ-0.5];
+    var x1y1z0 = [objectPosX+0.5, objectPosY+0.5, objectPosZ-0.5];
+    var x0y0z1 = [objectPosX-0.5, objectPosY-0.5, objectPosZ+0.5];
+    var x1y0z1 = [objectPosX+0.5, objectPosY-0.5, objectPosZ+0.5];
+    var x0y1z1 = [objectPosX-0.5, objectPosY+0.5, objectPosZ+0.5];
+    var x1y1z1 = [objectPosX+0.5, objectPosY+0.5, objectPosZ+0.5];
+
+
+    return [x0y0z0, x1y0z0, x0y1z0, x1y1z0, x0y0z1, x1y0z1, x0y1z1, x1y1z1];
+}
+
+function pushObjectToArray(object) {
+    lightPointArray.push(object[0]);
+    lightPointArray.push(object[1]);
+    lightPointArray.push(object[2]);
+    lightPointArray.push(object[1]);
+    lightPointArray.push(object[3]);
+    lightPointArray.push(object[2]);
+
+    lightPointArray.push(object[4]);
+    lightPointArray.push(object[5]);
+    lightPointArray.push(object[6]);
+    lightPointArray.push(object[5]);
+    lightPointArray.push(object[7]);
+    lightPointArray.push(object[6]);
+
+    lightPointArray.push(object[0]);
+    lightPointArray.push(object[2]);
+    lightPointArray.push(object[4]);
+    lightPointArray.push(object[2]);
+    lightPointArray.push(object[6]);
+    lightPointArray.push(object[4]);
+
+    lightPointArray.push(object[1]);
+    lightPointArray.push(object[3]);
+    lightPointArray.push(object[5]);
+    lightPointArray.push(object[3]);
+    lightPointArray.push(object[7]);
+    lightPointArray.push(object[5]);
+
+    lightPointArray.push(object[0]);
+    lightPointArray.push(object[1]);
+    lightPointArray.push(object[4]);
+    lightPointArray.push(object[1]);
+    lightPointArray.push(object[5]);
+    lightPointArray.push(object[4]);
+
+    lightPointArray.push(object[2]);
+    lightPointArray.push(object[3]);
+    lightPointArray.push(object[6]);
+    lightPointArray.push(object[3]);
+    lightPointArray.push(object[7]);
+    lightPointArray.push(object[6]);
 }
 
 function HandleBufferContent() 
@@ -440,7 +518,6 @@ function HandleBufferContent()
 			centerPos.push(centerP);
 		}
     });
-    //console.log(texCoordsArray);
 }
 
 function handleTrianglePointsAndColor(block, firstIndex, secondIndex, thirdIndex)
@@ -473,6 +550,48 @@ function handleTexPoints(p1, p2, p3) {
     texCoordsArray.push(p3);
 }
 
+function HandlerLightBuffers() {
+    var vec2DummyArray = [];
+    var vec3DummyArray = [];
+    var vec4DummyArray = [];
+    for (var i = 0 ; i < lightPointArray.length ; i++) {
+        vec2DummyArray.push([0.0, 0.0]);
+        vec3DummyArray.push([0.0, 0.0, 0.0]);
+        vec4DummyArray.push([0.0, 0.0, 0.0, 0.0]);
+    }
+
+    lightVBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, lightVBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(lightPointArray), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vPosition);
+
+    nLightBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nLightBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(vec4DummyArray), gl.STATIC_DRAW );
+    gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal );
+
+    cLightBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cLightBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(lightColorArray), gl.STATIC_DRAW );
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vColor);
+
+    cubeVLightBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVLightBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(vec2DummyArray), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(vTexCoord);
+
+    centLightBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, centLightBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, flatten(vec3DummyArray), gl.STATIC_DRAW);
+    gl.vertexAttribPointer(cPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(cPosition);
+
+
+}
 
 function updateWireframe()
 {
@@ -728,9 +847,14 @@ function Render()
 		gl.drawElements(gl.LINES, 24, gl.UNSIGNED_SHORT, 0);
 	}
 
+    //Render the sun and moon
+    RenderLightObjects();
+
 	//Render small blocks
 	renderSmallBlocks();
-	
+
+
+
     window.requestAnimFrame(Render);
 }
 
@@ -750,8 +874,35 @@ function renderSmallBlocks()
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, swBuffer);
 	gl.uniform4f(wireframeLoc, 0.0, 0.0, 0.0, 1.0);
     gl.drawElements(gl.LINES, 24*removedBlocks.length, gl.UNSIGNED_SHORT, 0);
+}
 
-	
+function RenderLightObjects() {
+    gl.bindBuffer(gl.ARRAY_BUFFER, lightVBuffer);
+    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, nLightBuffer );
+    gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
+    gl.bindBuffer(gl.ARRAY_BUFFER, cLightBuffer);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVLightBuffer);
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, centLightBuffer);
+    gl.vertexAttribPointer(cPosition, 3, gl.FLOAT, false, 0, 0);
+
+    gl.uniform1i(pick, 1);
+    gl.drawArrays( gl.TRIANGLES, 0, lightPointArray.length);
+    gl.uniform1i(pick, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vBuffer);
+    gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, nBuffer );
+    gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
+    gl.bindBuffer(gl.ARRAY_BUFFER, cBuffer);
+    gl.vertexAttribPointer(vColor, 4, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVBuffer);
+    gl.vertexAttribPointer(vTexCoord, 2, gl.FLOAT, false, 0, 0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, centBuffer);
+    gl.vertexAttribPointer(cPosition, 3, gl.FLOAT, false, 0, 0);
+
 }
 
 // ********************************************
@@ -768,15 +919,10 @@ function handleGravity() {
 }
 
 function getTexMapLocation(blockType) {
-
-
     var blockPos = getBlockPosOnTexMap(blockType);
-
 
     xPosOnTexMap = blockPos % 16;
     yPosOnTexMap = Math.floor(blockPos/16);
-
-    //console.log(xPosOnTexMap + "  " + yPosOnTexMap);
 
     var texCoord = [
         vec2(xPosOnTexMap/16, (16-yPosOnTexMap-1)/16),
@@ -784,8 +930,6 @@ function getTexMapLocation(blockType) {
         vec2((xPosOnTexMap+1)/16, (16-yPosOnTexMap)/16),
         vec2((xPosOnTexMap+1)/16, (16-yPosOnTexMap-1)/16)
     ];
-    //console.log(texCoord);
-
 
     return texCoord;
 }
@@ -1005,7 +1149,6 @@ function getBlock(vec) {
     var xBlockPos = xBlockNumber;
     var yBlockPos = yBlockNumber*worldWidth;
     var zBlockPos = zBlockNumber*worldWidth*worldHeight;
-    //console.log(xBlockPos + yBlockPos + zBlockPos);
     return blockArray[xBlockPos + yBlockPos + zBlockPos];
 }
 
