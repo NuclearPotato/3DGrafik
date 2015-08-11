@@ -65,10 +65,10 @@ var speed = 0;
 var lastTime = 0;
 
 // Lighting variables
-var sunPosition = vec4(10.0, 10.0, 10.0, 1.0 );
-var sunAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var sunPosition = vec4(10.0, 10.0, 10.0, 0.0 );
+var sunAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
 var sunDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
-var sunSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
+var sunSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 
 var moonPosition = vec4(-10.0, -10.0, -10.0, 1.0 );
 var moonAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
@@ -157,7 +157,7 @@ window.onload = function Init() {
 	nBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
     gl.bufferData( gl.ARRAY_BUFFER, flatten(normalArray), gl.STATIC_DRAW );
-    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.vertexAttribPointer( vNormal, 4, gl.FLOAT, false, 0, 0 );
     gl.enableVertexAttribArray( vNormal );
 
     newVBuffer = gl.createBuffer();
@@ -790,7 +790,7 @@ function AddColor(p1, p2, p3) {
     var normal = cross(subtract(p3, p1), subtract(p2, p1));
 	normal = normalize(normal);
     absColor = vec3(Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2]));
-    normalColor = vec3(normal[0], normal[1], normal[2]);
+    normalColor = vec4(normal[0], normal[1], normal[2], 0.0);
 	normalArray.push(normalColor);
 	normalArray.push(normalColor);
 	normalArray.push(normalColor);

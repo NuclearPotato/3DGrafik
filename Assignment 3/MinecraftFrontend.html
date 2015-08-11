@@ -7,18 +7,16 @@ attribute vec4 vPosition;
 attribute vec4 vColor;
 attribute vec4 cPosition;
 attribute vec2 vTexCoord;
-attribute vec3 vNormal;
+attribute vec4 vNormal;
 
 varying vec4 fColor;
-varying vec4 lColor;
 varying vec2 fTexCoord;
+varying vec4 N, L, E;
 
 uniform mat4 projectionMatrix;
 uniform mat4 sBRotationMatrix;
 uniform mat4 modelView;
-uniform vec4 ambientProduct, diffuseProduct, specularProduct;
 uniform vec4 lightPosition;
-uniform float shininess;
 
 void main()
 {
@@ -27,36 +25,11 @@ void main()
 	tPos = tPos + cPosition;
 	
 	// Lighting effects
-	vec3 pos = -(modelView * vPosition).xyz;
-    //fixed light postion
-    vec3 light = lightPosition.xyz;
-    vec3 L = normalize( light - pos );
-	vec3 E = normalize( -pos );
-    vec3 H = normalize( L + E );
-    
-	vec4 NN = vec4(vNormal,0);
-    
-	// Transform vertex normal into eye coordinates
-    vec3 N = normalize( (modelView*NN).xyz);
-	
-    // Ambient
-    vec4 ambient = ambientProduct;
-	
-	// Diffuse
-    float Kd = max( dot(L, N), 0.0 );
-    vec4  diffuse = Kd*diffuseProduct;
-
-	// Specular
-    float Ks = pow( max(dot(N, H), 0.0), shininess );
-    vec4  specular = Ks * specularProduct;
-    if( dot(L, N) < 0.0 ) 
-	{
-		specular = vec4(0.0, 0.0, 0.0, 1.0);
-    } 
-	
-	
-    lColor = ambient + diffuse +specular;
-    lColor.a = 1.0;
+	vec4 pos = -(modelView * tPos);
+    vec4 light = lightPosition;
+    L = normalize( light - pos );
+	E = -pos;
+    N = normalize( (modelView*vNormal));
 	
 	fColor = vColor;
 	fTexCoord = vTexCoord;
@@ -68,18 +41,41 @@ void main()
 precision mediump float;
 
 varying vec4 fColor;
-varying vec4 lColor;
 varying vec2 fTexCoord;
+varying vec4 N, L, E;
 
 uniform sampler2D texMap;
 uniform vec4 wireframe;
 uniform int pick;
 
+uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+uniform float shininess;
+
 void main()
 {
+	vec4 H = normalize(L + E);
+	
+	// Ambient
+    vec4 ambient = ambientProduct;
+	
+	// Diffuse
+    float Kd = max( dot(L, N), 0.0 );
+    vec4 diffuse = Kd*diffuseProduct;
+
+	// Specular
+    float Ks = pow( max(dot(N, H), 0.0), shininess );
+    vec4 specular = Ks * specularProduct;
+    if( dot(L, N) < 0.0 ) 
+	{
+		specular = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+	
+    vec4 lColor = ambient + diffuse +specular;
+    lColor.a = 1.0;
+
 	if(pick == 0)
 	{
-		gl_FragColor = (lColor + texture2D(texMap, fTexCoord) - wireframe) * wireframe;
+		gl_FragColor = (lColor * texture2D(texMap, fTexCoord)) * wireframe;
 	}
 	else
 	{
