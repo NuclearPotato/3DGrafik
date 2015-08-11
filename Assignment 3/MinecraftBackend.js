@@ -259,7 +259,7 @@ window.onload = function Init() {
     gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct) );
     gl.uniform4fv(specularProductLoc, flatten(specularProduct) );	
     gl.uniform4fv(lightPositionLoc, flatten(lightPosition) );
-    gl.uniform1f(shininessLoc, materialShininess);
+    gl.uniform1f(shininessLoc,  materialShininess);
 	
     //Adds eventListeners
     AddEvents();
@@ -358,26 +358,26 @@ function HandleBufferContent()
 {
     blockArray.forEach(function (entry) 
 	{
-        handleTrianglePointsAndColor(entry, 0, 1, 1);
-        handleTrianglePointsAndColor(entry, 1, 1, 1);
-        handleTrianglePointsAndColor(entry, 4, 1, 1);
-        handleTrianglePointsAndColor(entry, 5, 1, 1);
+        handleTrianglePointsAndColor(entry, 0, 1, 2);
+        handleTrianglePointsAndColor(entry, 1, 3, 2);
+        handleTrianglePointsAndColor(entry, 4, 5, 6);
+        handleTrianglePointsAndColor(entry, 5, 7, 6);
 
-        handleTrianglePointsAndColor(entry, 0, 2, 2);
-        handleTrianglePointsAndColor(entry, 2, 2, 2);
-        handleTrianglePointsAndColor(entry, 1, 2, 2);
-        handleTrianglePointsAndColor(entry, 3, 2, 2);
+        handleTrianglePointsAndColor(entry, 0, 2, 4);
+        handleTrianglePointsAndColor(entry, 2, 6, 4);
+        handleTrianglePointsAndColor(entry, 1, 3, 5);
+        handleTrianglePointsAndColor(entry, 3, 7, 5);
 
-        handleTrianglePointsAndColor(entry, 0, 1, 3);
-        handleTrianglePointsAndColor(entry, 1, 3, 1);
-        handleTrianglePointsAndColor(entry, 2, 1, 3);
-        handleTrianglePointsAndColor(entry, 3, 3, 1);
+        handleTrianglePointsAndColor(entry, 0, 1, 4);
+        handleTrianglePointsAndColor(entry, 1, 5, 4);
+        handleTrianglePointsAndColor(entry, 2, 3, 6);
+        handleTrianglePointsAndColor(entry, 3, 7, 6);
 
         var mapPos = getTexMapLocation(entry.blockType);
 
         for (var i = 0 ; i < 6 ; i++) {
             handleTexPoints(mapPos[1], mapPos[0], mapPos[2]);
-            handleTexPoints(mapPos[0], mapPos[2], mapPos[3]);
+            handleTexPoints(mapPos[0], mapPos[3], mapPos[2]);
         }
 		corner1 = worldGrid[entry.vecIndices[0]];
 		corner2 = worldGrid[entry.vecIndices[7]];
@@ -406,11 +406,11 @@ function HandleBufferContent()
     //console.log(texCoordsArray);
 }
 
-function handleTrianglePointsAndColor(block, start, firstIncrease, secondIncrease) 
+function handleTrianglePointsAndColor(block, firstIndex, secondIndex, thirdIndex)
 {
-    var p1 = worldGrid[block.vecIndices[start]];
-    var p2 = worldGrid[block.vecIndices[start + firstIncrease]];
-    var p3 = worldGrid[block.vecIndices[start + firstIncrease + secondIncrease]];
+    var p1 = worldGrid[block.vecIndices[firstIndex]];
+    var p2 = worldGrid[block.vecIndices[secondIndex]];
+    var p3 = worldGrid[block.vecIndices[thirdIndex]];
 
     var normalColor = AddColor(p1, p2, p3);
 
@@ -784,11 +784,14 @@ function getBlockPosOnTexMap(blockType) {
 function AddColor(p1, p2, p3) {
     var normal = cross(subtract(p3, p1), subtract(p2, p1));
     var colorFactor = 10;
+
     normalColor = [colorFactor*Math.abs(normal[0]), colorFactor*Math.abs(normal[1]), colorFactor*Math.abs(normal[2])];
     normal = vec3(normal[0], normal[1], normal[2]);
 	normalArray.push(normal);
 	normalArray.push(normal);
 	normalArray.push(normal);
+
+
     return vec4(normalColor, 1.0);
 }
 
