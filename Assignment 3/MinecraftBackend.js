@@ -77,8 +77,8 @@ var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialShininess = 100.0;
 
 var sunPosition = vec4(10.0, 0.0, 0.0, 1.0 );
-var sunDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
-var sunSpecular = vec4( 0.2, 0.2, 0.2, 1.0 );
+var sunDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
+var sunSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
 
 var moonPosition = vec4(-10.0, -10.0, -10.0, 1.0 );
 var moonDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
@@ -137,9 +137,7 @@ window.onload = function Init() {
     HandleBufferContent();
     HandlerLightBuffers();
     updateWireframe();
-
-
-
+	
     // Load shaders
     program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
@@ -782,39 +780,6 @@ function Render()
 {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    if (deleteBlock) 
-	{
-        removeSelectedBlock(985);
-        removeSelectedBlock(986);
-        removeSelectedBlock(983);
-        removeSelectedBlock(783);
-        removeSelectedBlock(784);
-        removeSelectedBlock(785);
-        removeSelectedBlock(683);
-        removeSelectedBlock(684);
-        removeSelectedBlock(685);
-        removeSelectedBlock(583);
-        removeSelectedBlock(584);
-        removeSelectedBlock(585);
-        deleteBlock = false;
-    }
-    if (addBlock) 
-	{
-        addSelectedBlock(983, "Dirt", "Solid");
-        addSelectedBlock(986, "Dirt", "Solid");
-        addSelectedBlock(985, "Stone", "Solid");
-        addSelectedBlock(783, "Stone", "Solid");
-        addSelectedBlock(784, "Stone", "Solid");
-        addSelectedBlock(785, "Stone", "Solid");
-        addSelectedBlock(683, "Stone", "Solid");
-        addSelectedBlock(684, "Stone", "Solid");
-        addSelectedBlock(685, "Stone", "Solid");
-        addSelectedBlock(583, "Dirt", "Solid");
-        addSelectedBlock(584, "Dirt", "Solid");
-        addSelectedBlock(585, "Dirt", "Solid");
-        addBlock = false;
-    }
-	
 	gl.bindTexture(gl.TEXTURE_2D, cubesTextures);
 	
     handleGravity();
@@ -852,9 +817,7 @@ function Render()
 
 	//Render small blocks
 	renderSmallBlocks();
-
-
-
+	
     window.requestAnimFrame(Render);
 }
 
@@ -960,13 +923,12 @@ function getBlockPosOnTexMap(blockType) {
 //Returns the color of the given blockType, calculated out from the norm of the plane
 function AddColor(p1, p2, p3) {
     var normal = cross(subtract(p3, p1), subtract(p2, p1));
-	normal = normalize(normal);
-    absColor = vec3(Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2]));
+    absColor = vec4(Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2]), 1.0);
     normalColor = vec4(normal[0], normal[1], normal[2], 0.0);
-	normalArray.push(vec4(absColor,0));
-	normalArray.push(vec4(absColor,0));
-	normalArray.push(vec4(absColor,0));
-    return vec4(absColor, 1.0);
+	normalArray.push(normalColor);
+	normalArray.push(normalColor);
+	normalArray.push(normalColor);
+    return normalize(absColor);
 }
 
 //Assign a blockType to a given spot in the blockArray, depending on

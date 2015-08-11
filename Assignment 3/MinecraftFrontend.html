@@ -12,10 +12,8 @@ attribute vec4 vNormal;
 varying vec4 fColor;
 varying vec2 fTexCoord;
 
-varying vec4 sunL, sunE;
-varying vec4 moonL, moonE;
-varying vec4 torchL, torchE;
-varying vec4 N;
+varying vec4 sunL, moonL, torchL;
+varying vec4 E, N;
 
 uniform mat4 projectionMatrix;
 uniform mat4 sBRotationMatrix;
@@ -30,15 +28,10 @@ void main()
 	
 	// Lighting effects
 	vec4 pos = (modelView * vPosition);
-	N = normalize( (modelView*(vNormal)));
-	
-	sunE = -normalize(pos);
+	N = normalize((modelView*(vNormal)));
+	E = -normalize(pos);
     sunL = normalize( sunPos - pos );
-	
-	moonE = -normalize(pos);
     moonL = normalize( moonPos - pos );
-	
-	torchE = -normalize(pos);
     torchL = normalize( torchPos - pos );
 	
 	fColor = vColor;
@@ -53,10 +46,8 @@ precision mediump float;
 varying vec4 fColor;
 varying vec2 fTexCoord;
 
-varying vec4 sunL, sunE;
-varying vec4 moonL, moonE;
-varying vec4 torchL, torchE;
-varying vec4 N;
+varying vec4 sunL, moonL, torchL;
+varying vec4 E, N;
 
 uniform sampler2D texMap;
 uniform vec4 wireframe;
@@ -68,17 +59,12 @@ uniform vec4 moonDiffuse, moonSpecular;
 uniform vec4 torchDiffuse, torchSpecular;
 uniform float shininess;
 
-vec4 doLighting(vec4 L, vec4 E,vec4 diffuseProduct, vec4 specularProduct)
+vec4 doLighting(vec4 L,vec4 diffuseProduct, vec4 specularProduct)
 {
 	vec4 H = normalize(L + E);
-	
-	// Ambient
-    vec4 ambient = ambientProduct;
-	
 	// Diffuse
     float Kd = max( dot(L, N), 0.0 );
     vec4 diffuse = Kd*diffuseProduct;
-
 	// Specular
     float Ks = pow( max(dot(N, H), 0.0), shininess );
     vec4 specular = Ks * specularProduct;
@@ -86,21 +72,19 @@ vec4 doLighting(vec4 L, vec4 E,vec4 diffuseProduct, vec4 specularProduct)
 	{
 		specular = vec4(0.0, 0.0, 0.0, 1.0);
     }
-	
-	return ambient + diffuse +specular;
+	return diffuse +specular;
 }
 
 void main()
 {
-    vec4 lColor = ambientProduct + doLighting(sunL, sunE, sunDiffuse, sunSpecular);
-    lColor = lColor + doLighting(moonL, moonE, moonDiffuse, moonSpecular);
-    lColor = lColor + doLighting(torchL, torchE, torchDiffuse, torchSpecular);
-	
-    lColor.a = 1.0;
-
 	if(pick == 0)
 	{
-		gl_FragColor = (lColor * (texture2D(texMap, fTexCoord))) * wireframe;
+		vec4 lColor = ambientProduct + doLighting(sunL, sunDiffuse, sunSpecular);
+		lColor = lColor + doLighting(moonL, moonDiffuse, moonSpecular);
+		lColor = lColor + doLighting(torchL, torchDiffuse, torchSpecular);
+		lColor.a = 1.0;
+		//gl_FragColor = (lColor * (texture2D(texMap, fTexCoord))) * wireframe;
+		gl_FragColor = lColor * wireframe;
 	}
 	else
 	{
