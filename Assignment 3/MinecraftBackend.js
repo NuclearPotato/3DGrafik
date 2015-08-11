@@ -760,7 +760,7 @@ function AddEvents()
 			var pos = faceToPos(face, blockPos)
 			var cell = getCell(pos);
 			// Add block at pick location
-			var blockType = "Solid";
+			var blockType = "Dirt";
 			addSelectedBlock(cell, blockType, assignBlockAppearance(blockType));
 		}
 		// Change to ortho top-down mapview
