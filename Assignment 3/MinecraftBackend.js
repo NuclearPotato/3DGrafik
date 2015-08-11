@@ -65,20 +65,23 @@ var speed = 0;
 var lastTime = 0;
 
 // Lighting variables
-var sunPosition = vec4(10.0, 10.0, 10.0, 0.0 );
-var sunAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
-var sunDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
-var sunSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-
-var moonPosition = vec4(-10.0, -10.0, -10.0, 1.0 );
-var moonAmbient = vec4(0.0, 0.0, 0.0, 1.0 );
-var moonDiffuse = vec4( 0.2, 0.2, 0.2, 1.0 );
-var moonSpecular = vec4( 0.3, 0.3, 0.3, 1.0 );
-
-var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0 );
+var ambient = vec4(0.0, 0.0, 0.0, 1.0 );
+var materialAmbient = vec4( 1.0, 1.0, 1.0, 1.0);
 var materialDiffuse = vec4( 1.0, 1.0, 1.0, 1.0);
 var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
-var materialShininess = 1.0;
+var materialShininess = 100.0;
+
+var sunPosition = vec4(10.0, 0.0, 0.0, 1.0 );
+var sunDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
+var sunSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
+
+var moonPosition = vec4(-10.0, -10.0, -10.0, 1.0 );
+var moonDiffuse = vec4( 0.0, 0.0, 0.0, 1.0 );
+var moonSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
+
+var torchPosition = vec3(0.0, 0.0, 0.0, 1.0 );
+var torchDiffuse = vec4( 0.4, 0.4, 0.4, 1.0 );
+var torchSpecular = vec4( 0.2, 0.2, 0.2, 1.0 );
 
 // Shader related variables
 var modelView;
@@ -86,7 +89,13 @@ var sBR;
 
 // Uniform variable locations
 var wireframeLoc, texMapLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix, pick;
-var ambientProductLoc, diffuseProductLoc, specularProductLoc, lightPositionLoc, shininessLoc;
+
+// Lighting resource locations
+var shininessLoc, ambientProductLoc;
+var sunPos, moonPos, torchPos;
+var sunDiffuseLoc, sunSpecularLoc;
+var moonDiffuseLoc, moonSpecularLoc;
+var torchDiffuseLoc, torchSpecularLoc;
 
 // Shader attributes locations
 var vPosition, vColor, cPosition, vTexCoord, vNormal;
@@ -109,7 +118,7 @@ window.onload = function Init() {
     
     gl.viewport( 0, 0, canvas.width, canvas.height );
     aspect = canvas.width/canvas.height;
-    gl.clearColor( 0.8, 0.8, 0.8, 1.0 );
+    gl.clearColor( 0.0, 0.0, 0.0, 1.0 );
     gl.clear( gl.COLOR_BUFFER_BIT );
 
     gl.enable(gl.DEPTH_TEST);
@@ -133,13 +142,24 @@ window.onload = function Init() {
     texMapLoc = gl.getUniformLocation(program, "texMaps");
     wireframeLoc = gl.getUniformLocation(program, "wireframe");
 	pick = gl.getUniformLocation(program,"pick");
+	
 	ambientProductLoc = gl.getUniformLocation(program,"ambientProduct");
-	diffuseProductLoc = gl.getUniformLocation(program,"diffuseProduct");
-	specularProductLoc = gl.getUniformLocation(program,"specularProduct");
-	lightPositionLoc = gl.getUniformLocation(program,"lightPosition");
+	
+	sunDiffuseLoc = gl.getUniformLocation(program,"sunDiffuse");
+	sunSpecularLoc = gl.getUniformLocation(program,"sunSpecular");
+	sunPos = gl.getUniformLocation(program,"sunPos");
+	
+	moonDiffuseLoc = gl.getUniformLocation(program,"moonDiffuse");
+	moonSpecularLoc = gl.getUniformLocation(program,"moonSpecular");
+	moonPos = gl.getUniformLocation(program,"moonPos");
+
+	torchDiffuseLoc = gl.getUniformLocation(program,"torchDiffuse");
+	torchSpecularLoc = gl.getUniformLocation(program,"torchSpecular");
+	torchPos = gl.getUniformLocation(program,"torchPos");
+	
 	shininessLoc = gl.getUniformLocation(program,"shininess");
 	gl.uniform1i(pick, 0);
-
+	
     // Attribute resource locations
 	vPosition = gl.getAttribLocation( program, "vPosition");
 	vColor = gl.getAttribLocation( program, "vColor");
@@ -256,15 +276,27 @@ window.onload = function Init() {
 	updateView();
 	
 		// Prepare lighting effects
-    ambientProduct = mult(sunAmbient, materialAmbient);
-    diffuseProduct = mult(sunDiffuse, materialDiffuse);
-    specularProduct = mult(sunSpecular, materialSpecular);
+    ambientProduct = mult(ambient, materialAmbient);
+	gl.uniform4fv(ambientProductLoc, flatten(ambientProduct) );
+	gl.uniform1f(shininessLoc,  materialShininess);
 	
-    gl.uniform4fv(ambientProductLoc, flatten(ambientProduct) );
-    gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct) );
-    gl.uniform4fv(specularProductLoc, flatten(specularProduct) );	
-    gl.uniform4fv(lightPositionLoc, flatten(sunPosition) );
-    gl.uniform1f(shininessLoc,  materialShininess);
+    var sunDiffuseProduct = mult(sunDiffuse, materialDiffuse);
+    var sunSpecularProduct = mult(sunSpecular, materialSpecular);
+    gl.uniform4fv(sunDiffuseLoc, flatten(sunDiffuseProduct) );
+    gl.uniform4fv(sunSpecularLoc, flatten(sunSpecularProduct) );	
+    gl.uniform4fv(sunPos, flatten(sunPosition) );
+    
+	var moonDiffuseProduct = mult(moonDiffuse, materialDiffuse);
+    var moonSpecularProduct = mult(moonSpecular, materialSpecular);
+    gl.uniform4fv(moonDiffuseLoc, flatten(moonDiffuseProduct) );
+    gl.uniform4fv(moonSpecularLoc, flatten(moonSpecularProduct) );	
+    gl.uniform4fv(moonPos, flatten(moonPosition) );
+	
+	var torchDiffuseProduct = mult(torchDiffuse, materialDiffuse);
+    var torchSpecularProduct = mult(torchSpecular, materialSpecular);
+    gl.uniform4fv(torchDiffuseLoc, flatten(torchDiffuseProduct) );
+    gl.uniform4fv(torchSpecularLoc, flatten(torchSpecularProduct) );	
+    gl.uniform4fv(torchPos, flatten(vec4(torchPosition, 1.0)) );
 	
     //Adds eventListeners
     AddEvents();
@@ -506,7 +538,7 @@ function AddEvents()
 			
             //rotMatrix = translate(0, 0, -3.0); // lookAt(eye, at, up);
 			var rMat = mat4();
-            rMat = mult(rMat, rotate(10*radX, [-1.0, 0.0, 0.0])); //rotate X
+            rMat = mult(rMat, rotate(10*radX, [-at[2], 0.0, at[0]])); //rotate X
             rMat = mult(rMat, rotate(10*radY, [0.0, 1.0, 0.0])); //rotate Y
 			
 			at = subtract(at, eye);
@@ -559,9 +591,8 @@ function AddEvents()
 
             collisions = CheckCollision(eye, move);
             move = mult(move, collisions);
-
-            at = add(at, move);
-            eye = add(eye, move);
+			
+			movePlayer(move);
         }
         if (event.keyCode == "65" && !mapView) { //A
             move = subtract(at, eye);
@@ -573,8 +604,7 @@ function AddEvents()
             collisions = CheckCollision(eye, move);
             move = mult(move, collisions);
 
-            at = add(at, move);
-            eye = add(eye, move);
+            movePlayer(move);
         }
         if (event.keyCode == "87" && !mapView) { //W
 
@@ -586,8 +616,7 @@ function AddEvents()
             collisions = CheckCollision(eye, move);
             move = mult(move, collisions);
 
-            at = add(at, move);
-            eye = add(eye, move);
+            movePlayer(move);
         }
         if (event.keyCode == "83" && !mapView) { //S
             move = subtract(at, eye);
@@ -598,8 +627,7 @@ function AddEvents()
             collisions = CheckCollision(eye, move);
             move = mult(move, collisions);
 
-            at = add(at, move);
-            eye = add(eye, move);
+            movePlayer(move);
         }
 		// Adding and removing blocks with pickings
 		if (event.keyCode == "81") // Q
@@ -791,9 +819,9 @@ function AddColor(p1, p2, p3) {
 	normal = normalize(normal);
     absColor = vec3(Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2]));
     normalColor = vec4(normal[0], normal[1], normal[2], 0.0);
-	normalArray.push(normalColor);
-	normalArray.push(normalColor);
-	normalArray.push(normalColor);
+	normalArray.push(vec4(absColor,0));
+	normalArray.push(vec4(absColor,0));
+	normalArray.push(vec4(absColor,0));
     return vec4(absColor, 1.0);
 }
 
@@ -1133,4 +1161,11 @@ function changeAddWireframe(block)
     }	
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, selectionBuffer);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(selectionWireframe), gl.STATIC_DRAW);
+}
+
+function movePlayer(move)
+{
+	at = add(at, move);
+    eye = add(eye, move);
+	torchPosition = vec4(eye,1.0);
 }
