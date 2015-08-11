@@ -83,8 +83,7 @@ void main()
 		lColor = lColor + doLighting(moonL, moonDiffuse, moonSpecular);
 		lColor = lColor + doLighting(torchL, torchDiffuse, torchSpecular);
 		lColor.a = 1.0;
-		//gl_FragColor = (lColor * (texture2D(texMap, fTexCoord))) * wireframe;
-		gl_FragColor = lColor * wireframe;
+		gl_FragColor = (lColor * (texture2D(texMap, fTexCoord))) * wireframe;
 	}
 	else
 	{

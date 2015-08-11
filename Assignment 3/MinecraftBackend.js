@@ -473,24 +473,24 @@ function HandleBufferContent()
 	{
         handleTrianglePointsAndColor(entry, 0, 1, 2);
         handleTrianglePointsAndColor(entry, 1, 3, 2);
-        handleTrianglePointsAndColor(entry, 4, 5, 6);
-        handleTrianglePointsAndColor(entry, 5, 7, 6);
+        handleTrianglePointsAndColor(entry, 5, 4, 6);
+        handleTrianglePointsAndColor(entry, 5, 6, 7);
 
-        handleTrianglePointsAndColor(entry, 0, 2, 4);
-        handleTrianglePointsAndColor(entry, 2, 6, 4);
-        handleTrianglePointsAndColor(entry, 1, 3, 5);
-        handleTrianglePointsAndColor(entry, 3, 7, 5);
+        handleTrianglePointsAndColor(entry, 4, 0, 6);
+        handleTrianglePointsAndColor(entry, 0, 2, 6);
+        handleTrianglePointsAndColor(entry, 1, 5, 3);
+        handleTrianglePointsAndColor(entry, 5, 7, 3 );
 
-        handleTrianglePointsAndColor(entry, 0, 1, 4);
-        handleTrianglePointsAndColor(entry, 1, 5, 4);
+        handleTrianglePointsAndColor(entry, 4, 5, 0);
+        handleTrianglePointsAndColor(entry, 5, 1, 0);
         handleTrianglePointsAndColor(entry, 2, 3, 6);
         handleTrianglePointsAndColor(entry, 3, 7, 6);
 
         var mapPos = getTexMapLocation(entry.blockType);
-
+        console.log(mapPos);
         for (var i = 0 ; i < 6 ; i++) {
-            handleTexPoints(mapPos[1], mapPos[0], mapPos[2]);
-            handleTexPoints(mapPos[0], mapPos[3], mapPos[2]);
+            handleTexPoints(mapPos[1], mapPos[2], mapPos[0]);
+            handleTexPoints(mapPos[2], mapPos[3], mapPos[0]);
         }
 		corner1 = worldGrid[entry.vecIndices[0]];
 		corner2 = worldGrid[entry.vecIndices[7]];
@@ -683,7 +683,7 @@ function AddEvents()
 		//Show wireframe of targetted area
 		var face = doPickFace();
 		var blockPos = colorToGrid(doPicking());
-		var pos = faceToPos(face, blockPos)
+		var pos = faceToPos(face, blockPos);
 		var cell = getCell(pos);
 		changeAddWireframe(cell);
     });
