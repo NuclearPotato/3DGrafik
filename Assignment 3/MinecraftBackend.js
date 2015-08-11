@@ -487,7 +487,6 @@ function HandleBufferContent()
         handleTrianglePointsAndColor(entry, 3, 7, 6);
 
         var mapPos = getTexMapLocation(entry.blockType);
-        console.log(mapPos);
         for (var i = 0 ; i < 6 ; i++) {
             handleTexPoints(mapPos[1], mapPos[2], mapPos[0]);
             handleTexPoints(mapPos[2], mapPos[3], mapPos[0]);
