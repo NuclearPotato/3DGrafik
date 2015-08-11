@@ -23,7 +23,7 @@ var numberOfBlocks = worldWidth*worldHeight*worldDepth;
 var blockArray = [];
 var blocksPositionsInBuffer = [];
 var vBuffer, cBuffer, iBuffer, sBuffer, 
-swBuffer, centBuffer, contColBuffer, newVBuffer, cubeVBuffer;
+swBuffer, centBuffer, contColBuffer, nBuffer, newVBuffer, cubeVBuffer;
 var iIndex = 0;
 var iIndices = [];
 var newPointArray = [];
@@ -34,6 +34,8 @@ var swIndices = [];
 
 var centerColor = [];
 var centerPos = [];
+
+var normalArray = [];
 
 // Picking buffers
 var pickFramebuffer;
@@ -62,6 +64,16 @@ const up = vec3(0.0, 1.0, 0.0);
 var speed = 0;
 var lastTime = 0;
 
+// Lighting variables
+var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
+var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
+var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+
+var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0);
+var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
+var materialShininess = 100.0;
 
 // Shader related variables
 var modelView;
@@ -69,9 +81,10 @@ var sBR;
 
 // Uniform variable locations
 var wireframeLoc, texMapLoc, modelViewLoc, projectionMatrix, projectionLoc , sBRotationMatrix, pick;
+var ambientProductLoc, diffuseProductLoc, specularProductLoc, lightPositionLoc, shininessLoc;
 
 // Shader attributes locations
-var vPosition, vColor, cPosition, vTexCoord;
+var vPosition, vColor, cPosition, vTexCoord, vNormal;
 
 // The block function object
 function Block(blockType, vecIndices, appearance)
@@ -115,6 +128,11 @@ window.onload = function Init() {
     texMapLoc = gl.getUniformLocation(program, "texMaps");
     wireframeLoc = gl.getUniformLocation(program, "wireframe");
 	pick = gl.getUniformLocation(program,"pick");
+	ambientProductLoc = gl.getUniformLocation(program,"ambientProduct");
+	diffuseProductLoc = gl.getUniformLocation(program,"diffuseProduct");
+	specularProductLoc = gl.getUniformLocation(program,"specularProduct");
+	lightPositionLoc = gl.getUniformLocation(program,"lightPosition");
+	shininessLoc = gl.getUniformLocation(program,"shininess");
 	gl.uniform1i(pick, 0);
 
     // Attribute resource locations
@@ -122,7 +140,7 @@ window.onload = function Init() {
 	vColor = gl.getAttribLocation( program, "vColor");
 	cPosition = gl.getAttribLocation( program, "cPosition");
     vTexCoord = gl.getAttribLocation( program, "vTexCoord");
-
+    vNormal = gl.getAttribLocation( program, "vNormal");
 
 	// Initial buffer creation and initial attribute assignment
     vBuffer = gl.createBuffer();
@@ -130,6 +148,12 @@ window.onload = function Init() {
     gl.bufferData(gl.ARRAY_BUFFER, flatten(pointArray), gl.STATIC_DRAW);
     gl.vertexAttribPointer(vPosition, 3, gl.FLOAT, false, 0, 0);
     gl.enableVertexAttribArray(vPosition);
+
+	nBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, nBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normalArray), gl.STATIC_DRAW );
+    gl.vertexAttribPointer( vNormal, 3, gl.FLOAT, false, 0, 0 );
+    gl.enableVertexAttribArray( vNormal );
 
     newVBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, newVBuffer);
@@ -225,7 +249,18 @@ window.onload = function Init() {
 
     //Initialize Views
 	updateView();
-
+	
+		// Prepare lighting effects
+    ambientProduct = mult(lightAmbient, materialAmbient);
+    diffuseProduct = mult(lightDiffuse, materialDiffuse);
+    specularProduct = mult(lightSpecular, materialSpecular);
+	
+    gl.uniform4fv(ambientProductLoc, flatten(ambientProduct) );
+    gl.uniform4fv(diffuseProductLoc, flatten(diffuseProduct) );
+    gl.uniform4fv(specularProductLoc, flatten(specularProduct) );	
+    gl.uniform4fv(lightPositionLoc, flatten(lightPosition) );
+    gl.uniform1f(shininessLoc, materialShininess);
+	
     //Adds eventListeners
     AddEvents();
 
@@ -428,6 +463,7 @@ function updateWireframe()
 				centerPos.push(centerP);
 				centerColor.push(vec4(0.0,0.0,0.0,0.0));
 				colorArray.push(frameColor);
+				normalArray.push(frameColor);
                 texCoordsArray.push([]);
                 if (entry.appearance != "Air") {
                     iIndices.push(iIndex + i);
@@ -748,9 +784,12 @@ function getBlockPosOnTexMap(blockType) {
 function AddColor(p1, p2, p3) {
     var normal = cross(subtract(p3, p1), subtract(p2, p1));
     var colorFactor = 10;
-    normal = [colorFactor*Math.abs(normal[0]), colorFactor*Math.abs(normal[1]), colorFactor*Math.abs(normal[2])];
-
-    return vec4(normal, 1.0);
+    normalColor = [colorFactor*Math.abs(normal[0]), colorFactor*Math.abs(normal[1]), colorFactor*Math.abs(normal[2])];
+    normal = vec3(normal[0], normal[1], normal[2]);
+	normalArray.push(normal);
+	normalArray.push(normal);
+	normalArray.push(normal);
+    return vec4(normalColor, 1.0);
 }
 
 //Assign a blockType to a given spot in the blockArray, depending on
@@ -1015,10 +1054,10 @@ function colorToGrid(color)
 function doPickFace()
 {
 	var color = new Uint8Array(4);
-
+	
 	// Prepare the framebuffer for drawing
 	gl.bindFramebuffer(gl.FRAMEBUFFER, pickFramebuffer);
-	gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
+	//gl.bindRenderbuffer(gl.RENDERBUFFER, pickDepthBuffer);
 	//gl.bindTexture(gl.TEXTURE_2D, pickTexture);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
@@ -1038,11 +1077,10 @@ function doPickFace()
     gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, color);
 
 	// Revert to usual drawing
-	gl.bindTexture(gl.TEXTURE_2D, null);
-	gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+	//gl.bindTexture(gl.TEXTURE_2D, null);
+	//gl.bindRenderbuffer(gl.RENDERBUFFER, null);
 	gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 	gl.uniform1i(pick, 0);
-
 	return color;
 }
 

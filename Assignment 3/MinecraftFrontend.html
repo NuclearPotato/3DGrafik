@@ -7,20 +7,52 @@ attribute vec4 vPosition;
 attribute vec4 vColor;
 attribute vec4 cPosition;
 attribute vec2 vTexCoord;
+attribute vec3 vNormal;
 
 varying vec4 fColor;
+varying vec4 lColor;
 varying vec2 fTexCoord;
 
 uniform mat4 projectionMatrix;
 uniform mat4 sBRotationMatrix;
 uniform mat4 modelView;
-
+uniform vec4 ambientProduct, diffuseProduct, specularProduct;
+uniform vec4 lightPosition;
+uniform float shininess;
 
 void main()
 {
 	vec4 tPos = vPosition - cPosition;
 	tPos = tPos * sBRotationMatrix;
 	tPos = tPos + cPosition;
+	// BEGIN LIGHT SHIT
+	vec3 pos = -(modelView * vPosition).xyz;
+    //fixed light postion
+    vec3 light = lightPosition.xyz;
+    vec3 L = normalize( light - pos );
+	vec3 E = normalize( -pos );
+    vec3 H = normalize( L + E );
+    
+	vec4 NN = vec4(vNormal,0);
+    
+	// Transform vertex normal into eye coordinates
+    vec3 N = normalize( (modelView*NN).xyz);
+    // Compute terms in the illumination equation
+    vec4 ambient = ambientProduct;
+    float Kd = max( dot(L, N), 0.0 );
+    vec4  diffuse = Kd*diffuseProduct;
+
+    float Ks = pow( max(dot(N, H), 0.0), shininess );
+    vec4  specular = Ks * specularProduct;
+    
+    if( dot(L, N) < 0.0 ) 
+	{
+		specular = vec4(0.0, 0.0, 0.0, 1.0);
+    } 
+    lColor = ambient + diffuse +specular;
+    
+    lColor.a = 1.0;
+	
 	
 	fColor = vColor;
 	fTexCoord = vTexCoord;
@@ -32,6 +64,7 @@ void main()
 precision mediump float;
 
 varying vec4 fColor;
+varying vec4 lColor;
 varying vec2 fTexCoord;
 
 uniform sampler2D texMap;
@@ -42,7 +75,7 @@ void main()
 {
 	if(pick == 0)
 	{
-		gl_FragColor = texture2D(texMap, fTexCoord) * wireframe;
+		gl_FragColor = lColor + texture2D(texMap, fTexCoord) * wireframe;
 	}
 	else
 	{
