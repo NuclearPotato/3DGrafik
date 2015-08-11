@@ -87,6 +87,7 @@ It would have been more efficient if we could somehow have used one color per in
 
 Our world has a constant-max size of 10x10x10, due to being built based on clip coordinates, 
 if we had instead given each block a constant-size, and let them extend beyond the -1,-1,-1 to 1,1,1 range, 
-we could have had a much greater amount of blocks.
+we could have had a much greater amount of blocks. Because of this limitation, it is not possible for the user to add blocks outside of the pretermined area.
 
 Our implementation of the blin-phong lighting model requires several uniforms and varying variables for every lightsource, and quickly bloats up.
+The small rotating blocks do not receive the correct lighting effects.

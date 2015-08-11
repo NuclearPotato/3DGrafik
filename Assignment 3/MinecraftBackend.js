@@ -77,16 +77,16 @@ var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
 var materialShininess = 100.0;
 
 var sunPosition = vec4(10.0, 0.0, 0.0, 1.0 );
-var sunDiffuse = vec4( 0.6, 0.6, 0.3, 1.0 );
-var sunSpecular = vec4( 0.6, 0.6, 0.3, 1.0 );
+var sunDiffuse = vec4( 0.8, 0.8, 0.8, 1.0 );
+var sunSpecular = vec4( 0.6, 0.6, 0.6, 1.0 );
 
-var moonPosition = vec4(-10.0, -10.0, -10.0, 1.0 );
-var moonDiffuse = vec4( 0.2, 0.4, 0.2, 1.0 );
+var moonPosition = vec4(-10.0, -10.0, 0.0, 1.0 );
+var moonDiffuse = vec4( 0.4, 0.2, 0.2, 1.0 );
 var moonSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
 
 var torchPosition = vec3(0.0, 0.0, 0.0, 1.0 );
-var torchDiffuse = vec4( 0.3, 0.3, 0.3, 1.0 );
-var torchSpecular = vec4( 0.1, 0.1, 0.1, 1.0 );
+var torchDiffuse = vec4( 0.2, 0.1, 0.1, 1.0 );
+var torchSpecular = vec4( 0.0, 0.0, 0.0, 1.0 );
 
 // Shader related variables
 var modelView;
