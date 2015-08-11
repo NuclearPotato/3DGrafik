@@ -25,7 +25,8 @@ void main()
 	vec4 tPos = vPosition - cPosition;
 	tPos = tPos * sBRotationMatrix;
 	tPos = tPos + cPosition;
-	// BEGIN LIGHT SHIT
+	
+	// Lighting effects
 	vec3 pos = -(modelView * vPosition).xyz;
     //fixed light postion
     vec3 light = lightPosition.xyz;
@@ -37,22 +38,25 @@ void main()
     
 	// Transform vertex normal into eye coordinates
     vec3 N = normalize( (modelView*NN).xyz);
-    // Compute terms in the illumination equation
+	
+    // Ambient
     vec4 ambient = ambientProduct;
+	
+	// Diffuse
     float Kd = max( dot(L, N), 0.0 );
     vec4  diffuse = Kd*diffuseProduct;
 
+	// Specular
     float Ks = pow( max(dot(N, H), 0.0), shininess );
     vec4  specular = Ks * specularProduct;
-    
     if( dot(L, N) < 0.0 ) 
 	{
 		specular = vec4(0.0, 0.0, 0.0, 1.0);
     } 
-    lColor = ambient + diffuse +specular;
-    
-    lColor.a = 1.0;
 	
+	
+    lColor = ambient + diffuse +specular;
+    lColor.a = 1.0;
 	
 	fColor = vColor;
 	fTexCoord = vTexCoord;
@@ -75,7 +79,7 @@ void main()
 {
 	if(pick == 0)
 	{
-		gl_FragColor = lColor + texture2D(texMap, fTexCoord) * wireframe;
+		gl_FragColor = (lColor + texture2D(texMap, fTexCoord)) * wireframe;
 	}
 	else
 	{

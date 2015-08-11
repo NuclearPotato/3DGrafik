@@ -65,15 +65,15 @@ var speed = 0;
 var lastTime = 0;
 
 // Lighting variables
-var lightPosition = vec4(1.0, 1.0, 1.0, 0.0 );
-var lightAmbient = vec4(0.2, 0.2, 0.2, 1.0 );
-var lightDiffuse = vec4( 1.0, 1.0, 1.0, 1.0 );
-var lightSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+var lightPosition = vec4(2.0, 2.0, 0.0, 0.0 );
+var lightAmbient = vec4(0.1, 0.1, 0.1, 1.0 );
+var lightDiffuse = vec4( 0.2, 0.2, 0.2, 1.0 );
+var lightSpecular = vec4( 0.3, 0.3, 0.3, 1.0 );
 
-var materialAmbient = vec4( 1.0, 0.0, 1.0, 1.0 );
-var materialDiffuse = vec4( 1.0, 0.8, 0.0, 1.0);
-var materialSpecular = vec4( 1.0, 0.8, 0.0, 1.0 );
-var materialShininess = 100.0;
+var materialAmbient = vec4( 0.0, 0.0, 0.0, 1.0 );
+var materialDiffuse = vec4( 1.0, 1.0, 1.0, 1.0);
+var materialSpecular = vec4( 1.0, 1.0, 1.0, 1.0 );
+var materialShininess = 20.0;
 
 // Shader related variables
 var modelView;
@@ -783,13 +783,13 @@ function getBlockPosOnTexMap(blockType) {
 //Returns the color of the given blockType, calculated out from the norm of the plane
 function AddColor(p1, p2, p3) {
     var normal = cross(subtract(p3, p1), subtract(p2, p1));
-    var colorFactor = 10;
-    normalColor = [colorFactor*Math.abs(normal[0]), colorFactor*Math.abs(normal[1]), colorFactor*Math.abs(normal[2])];
-    normal = vec3(normal[0], normal[1], normal[2]);
-	normalArray.push(normal);
-	normalArray.push(normal);
-	normalArray.push(normal);
-    return vec4(normalColor, 1.0);
+	normal = normalize(normal);
+    absColor = vec3(Math.abs(normal[0]), Math.abs(normal[1]), Math.abs(normal[2]));
+    normalColor = vec3(normal[0], normal[1], normal[2]);
+	normalArray.push(normalColor);
+	normalArray.push(normalColor);
+	normalArray.push(normalColor);
+    return vec4(absColor, 1.0);
 }
 
 //Assign a blockType to a given spot in the blockArray, depending on
